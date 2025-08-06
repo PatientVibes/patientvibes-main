@@ -80,6 +80,33 @@ The website embodies the "vibe coding" approach - combining:
 - Automation solution case studies
 - Innovative development showcases
 
+## 🚀 Deployment
+
+### Cloudflare Pages Configuration
+- **Project Name**: patientvibes-main
+- **Domain**: patientvibes.io
+- **Build Command**: None (static HTML)
+- **Output Directory**: `/` (root)
+- **Framework Preset**: None
+
+### Local Development
+```bash
+# Clone the repository
+git clone https://github.com/PatientVibes/patientvibes-main.git
+cd patientvibes-main
+
+# Open in browser (no build process required)
+open index.html
+```
+
+### Deployment Process
+1. Push changes to GitHub main branch
+2. Cloudflare Pages automatically deploys
+3. Changes live at patientvibes.io within minutes
+
+### Environment Variables
+None required - pure static HTML/CSS/JS site
+
 ---
 
 **PatientVibes.io** - Transforming Complex Workflows with Intelligent Automation
