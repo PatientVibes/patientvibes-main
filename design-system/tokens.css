@@ -1,0 +1,89 @@
+/* patientvibes/agents — design tokens
+   Direction 05 · Sage Editorial — Instrument Serif + Inter + JetBrains Mono on sage/ink. */
+
+:root {
+  /* ── color · surfaces ── */
+  --pv-bg:        #eef0e8;  /* page */
+  --pv-paper:     #f7f8f1;  /* cards, surfaces */
+  --pv-paper-2:   #e7ecdf;  /* recessed / striped fills */
+  --pv-line:      #cfd6c8;  /* hairlines */
+  --pv-line-strong:#11251c; /* editorial rules */
+
+  /* ── color · ink ── */
+  --pv-ink:       #11251c;  /* primary text, primary fills */
+  --pv-ink-2:     #22382c;  /* body */
+  --pv-mute:      #5d6f64;  /* secondary, labels */
+  --pv-dim:       #8a9990;  /* tertiary, captions */
+
+  /* ── color · brand ── */
+  --pv-sage:      #3F6B54;  /* signature accent */
+  --pv-sage-soft: #7fa68f;  /* hover / decorative */
+  --pv-sage-tint: rgba(63,107,84,.08);
+  --pv-lime:      #B8D147;  /* highlight on dark only */
+  --pv-coral:     #D6764E;  /* danger / attention */
+
+  /* ── code syntax (light) ── */
+  --pv-syn-keyword:  var(--pv-coral);
+  --pv-syn-string:   var(--pv-sage);
+  --pv-syn-comment:  var(--pv-mute);
+  --pv-syn-fn:       var(--pv-ink);
+  --pv-syn-number:   var(--pv-sage);
+
+  /* ── radii ── */
+  --pv-r-0: 0px;       /* editorial */
+  --pv-r-1: 2px;
+  --pv-r-2: 4px;
+  --pv-r-3: 8px;
+  --pv-r-4: 12px;
+  --pv-r-pill: 999px;
+
+  /* ── spacing scale (4-base) ── */
+  --pv-1: 4px;
+  --pv-2: 8px;
+  --pv-3: 12px;
+  --pv-4: 16px;
+  --pv-5: 24px;
+  --pv-6: 32px;
+  --pv-7: 48px;
+  --pv-8: 64px;
+  --pv-9: 96px;
+
+  /* ── shadow (rare; use hairlines instead) ── */
+  --pv-shadow-1: 0 1px 0 rgba(17,37,28,.04);
+  --pv-shadow-2: 0 8px 24px rgba(17,37,28,.08);
+  --pv-shadow-pop: 0 16px 48px rgba(17,37,28,.16);
+
+  /* ── type ── */
+  --pv-font-serif: 'Instrument Serif', 'EB Garamond', Georgia, serif;
+  --pv-font-sans:  'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --pv-font-mono:  'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  --pv-track-display: -0.025em;
+  --pv-track-tight:   -0.015em;
+  --pv-track-body:    -0.005em;
+  --pv-track-mono:    0;
+  --pv-track-eyebrow: 0.18em;
+
+  /* ── motion ── */
+  --pv-ease: cubic-bezier(.2,.7,.3,1);
+  --pv-dur-1: 120ms;
+  --pv-dur-2: 200ms;
+  --pv-dur-3: 320ms;
+}
+
+/* Inversion for dark surfaces (terminal blocks, hero ribbons) */
+.pv-on-ink {
+  --pv-bg: #11251c;
+  --pv-paper: #0d1f17;
+  --pv-paper-2: #18342a;
+  --pv-line: #1f3a2c;
+  --pv-ink: #dfe7d8;
+  --pv-ink-2: #c7d1bf;
+  --pv-mute: #90a597;
+  --pv-dim: #6a8278;
+  --pv-syn-keyword: #ffb38a;
+  --pv-syn-string: var(--pv-lime);
+  --pv-syn-comment: var(--pv-dim);
+  --pv-syn-fn: var(--pv-sage-soft);
+  --pv-syn-number: var(--pv-lime);
+}

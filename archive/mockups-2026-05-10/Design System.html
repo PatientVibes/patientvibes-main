@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>patientvibes/agents — Design System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="design-system/tokens.css">
+<link rel="stylesheet" href="design-system/base.css">
+<link rel="stylesheet" href="design-system/components.css">
+<style>
+  /* page chrome — only used by this doc, not part of the system */
+  .ds-shell { display: grid; grid-template-columns: 260px minmax(0,1fr); min-height: 100vh; }
+  .ds-side {
+    position: sticky; top: 0; height: 100vh; overflow-y: auto;
+    padding: var(--pv-7) var(--pv-5) var(--pv-6);
+    border-right: 1px solid var(--pv-line);
+    background: var(--pv-bg);
+  }
+  .ds-side h1 { font-family: var(--pv-font-serif); font-size: 30px; font-weight: 400; letter-spacing: var(--pv-track-tight); line-height: 1; margin: 0 0 4px; }
+  .ds-side .sub { font: 400 11px/1.4 var(--pv-font-mono); text-transform: uppercase; letter-spacing: var(--pv-track-eyebrow); color: var(--pv-mute); }
+  .ds-toc { margin-top: var(--pv-7); display: flex; flex-direction: column; gap: 2px; }
+  .ds-toc a { display: block; padding: 6px 10px; margin-left: -10px; border-radius: var(--pv-r-2); font: 400 13.5px/1 var(--pv-font-sans); color: var(--pv-ink-2); text-decoration: none; }
+  .ds-toc a:hover { background: var(--pv-paper); color: var(--pv-ink); }
+  .ds-toc .num { font-family: var(--pv-font-mono); font-size: 11px; color: var(--pv-mute); display: inline-block; width: 22px; }
+
+  .ds-main { padding: var(--pv-7) var(--pv-9) var(--pv-9); max-width: 1180px; }
+  .ds-section { padding: var(--pv-8) 0; border-top: 1px solid var(--pv-line); }
+  .ds-section:first-of-type { border-top: 0; padding-top: var(--pv-5); }
+  .ds-section__head { display: flex; align-items: baseline; gap: var(--pv-4); margin-bottom: var(--pv-6); }
+  .ds-section__num { font-family: var(--pv-font-mono); font-size: 12px; color: var(--pv-sage); letter-spacing: var(--pv-track-eyebrow); text-transform: uppercase; }
+  .ds-section__title { font-family: var(--pv-font-serif); font-size: 56px; line-height: 1; letter-spacing: var(--pv-track-display); font-weight: 400; margin: 0; }
+  .ds-section__sub { color: var(--pv-mute); margin-top: var(--pv-3); max-width: 60ch; }
+
+  .ds-block { margin-bottom: var(--pv-7); }
+  .ds-block__label { display: flex; align-items: center; gap: var(--pv-3); margin-bottom: var(--pv-4); }
+  .ds-block__label .dot { width: 6px; height: 6px; background: var(--pv-sage); border-radius: 50%; }
+  .ds-block__title { font: 500 14px/1 var(--pv-font-sans); color: var(--pv-ink); letter-spacing: var(--pv-track-body); }
+  .ds-block__desc { color: var(--pv-mute); font-size: 13.5px; margin-bottom: var(--pv-4); max-width: 64ch; }
+
+  .ds-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--pv-6); }
+  .ds-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--pv-5); }
+  .ds-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--pv-4); }
+  .ds-grid-6 { display: grid; grid-template-columns: repeat(6, 1fr); gap: var(--pv-3); }
+
+  .ds-stack { display: flex; flex-direction: column; gap: var(--pv-4); }
+  .ds-row { display: flex; flex-wrap: wrap; gap: var(--pv-3); align-items: center; }
+
+  /* swatch */
+  .ds-sw { aspect-ratio: 1; border-radius: var(--pv-r-1); padding: 10px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid transparent; }
+  .ds-sw .name { font: 500 12px/1 var(--pv-font-sans); }
+  .ds-sw .var { font: 400 10.5px/1.4 var(--pv-font-mono); opacity: .75; }
+  .ds-sw .hex { font: 400 11px/1 var(--pv-font-mono); opacity: .85; align-self: flex-start; }
+
+  /* type spec */
+  .ds-spec { padding: var(--pv-5) var(--pv-5); border: 1px solid var(--pv-line); background: var(--pv-paper); border-radius: var(--pv-r-1); }
+  .ds-spec__meta { display: flex; gap: var(--pv-4); font: 400 11px/1 var(--pv-font-mono); color: var(--pv-mute); text-transform: uppercase; letter-spacing: var(--pv-track-eyebrow); margin-bottom: var(--pv-3); }
+  .ds-spec__sample { color: var(--pv-ink); }
+
+  /* token table */
+  .ds-tbl { width: 100%; border-collapse: collapse; font: 400 13px/1.5 var(--pv-font-mono); }
+  .ds-tbl th, .ds-tbl td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--pv-line); }
+  .ds-tbl th { font: 500 11px/1 var(--pv-font-mono); text-transform: uppercase; letter-spacing: var(--pv-track-eyebrow); color: var(--pv-mute); }
+  .ds-tbl td.preview { width: 90px; }
+  .ds-space-box { background: var(--pv-sage); height: 16px; border-radius: 2px; }
+  .ds-radius-box { width: 28px; height: 28px; background: var(--pv-ink); }
+  .ds-shadow-box { width: 60px; height: 36px; background: var(--pv-paper); border: 1px solid var(--pv-line); }
+
+  /* component panel */
+  .ds-panel { border: 1px solid var(--pv-line); background: var(--pv-paper); border-radius: var(--pv-r-1); padding: var(--pv-5); }
+  .ds-panel--ink { background: var(--pv-ink); color: var(--pv-bg); border-color: var(--pv-ink); }
+
+  /* do/don't */
+  .ds-rule { display: grid; grid-template-columns: 28px 1fr; gap: var(--pv-3); align-items: start; padding: var(--pv-3) 0; }
+  .ds-rule__icon { width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font: 500 13px/1 var(--pv-font-sans); }
+  .ds-rule__icon--do { background: var(--pv-sage); color: #fff; }
+  .ds-rule__icon--no { background: var(--pv-coral); color: #fff; }
+  .ds-rule p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--pv-ink-2); }
+  .ds-rule strong { color: var(--pv-ink); font-weight: 600; }
+
+  /* logo */
+  .ds-logo { display: flex; align-items: center; gap: 14px; }
+  .ds-logo .glyph {
+    width: 56px; height: 56px;
+    border: 1.5px solid var(--pv-sage);
+    color: var(--pv-sage);
+    border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font: italic 28px/1 var(--pv-font-serif);
+  }
+  .ds-logo .wordmark { font: 400 32px/1 var(--pv-font-serif); letter-spacing: var(--pv-track-tight); }
+  .ds-logo .wordmark .slash { color: var(--pv-mute); margin: 0 4px; }
+  .ds-logo .wordmark .product { color: var(--pv-sage); }
+
+  /* mock viewport */
+  .ds-mock {
+    border: 1px solid var(--pv-line);
+    background: var(--pv-paper);
+    border-radius: var(--pv-r-1);
+    overflow: hidden;
+  }
+  .ds-mock__bar {
+    height: 28px;
+    display: flex; align-items: center; gap: 5px;
+    padding: 0 10px;
+    background: var(--pv-bg); border-bottom: 1px solid var(--pv-line);
+  }
+  .ds-mock__bar i { width: 8px; height: 8px; border-radius: 50%; background: var(--pv-line); display: inline-block; }
+</style>
+</head>
+<body>
+
+<div class="ds-shell">
+  <!-- ── Sidebar ── -->
+  <aside class="ds-side">
+    <div class="ds-logo" style="margin-bottom: var(--pv-2);">
+      <span class="glyph">pv</span>
+    </div>
+    <h1>patientvibes</h1>
+    <div class="sub">Agents · Design System v0.1</div>
+    <nav class="ds-toc">
+      <a href="#foundations"><span class="num">00</span>Foundations</a>
+      <a href="#color"><span class="num">01</span>Color</a>
+      <a href="#type"><span class="num">02</span>Typography</a>
+      <a href="#space"><span class="num">03</span>Space, radii, shadow</a>
+      <a href="#brand"><span class="num">04</span>Brand mark</a>
+      <a href="#components"><span class="num">05</span>Components</a>
+      <a href="#patterns"><span class="num">06</span>Patterns</a>
+      <a href="#voice"><span class="num">07</span>Voice & usage</a>
+    </nav>
+  </aside>
+
+  <!-- ── Main ── -->
+  <main class="ds-main">
+
+    <!-- 00 — Foundations -->
+    <section id="foundations" class="ds-section">
+      <div class="ds-section__head">
+        <span class="ds-section__num">00 · Foundations</span>
+      </div>
+      <div class="pv-display-2" style="margin-bottom: 36px;">A quietly opinionated<br>system for shipping agents.</div>
+      <p class="pv-lede" style="max-width: 62ch; margin: 0;">Editorial typography on a calm sage canvas. Hairlines, generous space, deliberate accents. Built for developers — every component reads like documentation, every surface earns its weight.</p>
+
+      <div class="ds-grid-3" style="margin-top: var(--pv-7);">
+        <div>
+          <div class="pv-eyebrow" style="margin-bottom: 8px;">Principles · 01</div>
+          <div class="pv-h3" style="margin-bottom: 4px;">Quiet by default</div>
+          <p class="pv-small">No gradients without reason. No shadow without cause. Hairlines and ink before fills.</p>
+        </div>
+        <div>
+          <div class="pv-eyebrow" style="margin-bottom: 8px;">Principles · 02</div>
+          <div class="pv-h3" style="margin-bottom: 4px;">Editorial pacing</div>
+          <p class="pv-small">Serif display sets the tone; sans carries the work; mono carries the truth. Three voices, never four.</p>
+        </div>
+        <div>
+          <div class="pv-eyebrow" style="margin-bottom: 8px;">Principles · 03</div>
+          <div class="pv-h3" style="margin-bottom: 4px;">Truth in mono</div>
+          <p class="pv-small">Anything the machine knows — IDs, costs, latencies, code — wears JetBrains Mono. The eye learns to trust it.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 01 — Color -->
+    <section id="color" class="ds-section">
+      <div class="ds-section__head">
+        <span class="ds-section__num">01 · Color</span>
+      </div>
+      <h2 class="ds-section__title">Sage on cream, ink for weight.</h2>
+      <p class="ds-section__sub">Six tokens do almost everything. Lime appears only on ink. Coral is reserved for danger and attention — use it like punctuation.</p>
+
+      <div class="ds-block" style="margin-top: var(--pv-6);">
+        <div class="ds-block__label"><span class="dot"></span><span class="ds-block__title">Surfaces & ink</span></div>
+        <div class="ds-grid-6">
+          <div class="ds-sw" style="background:#eef0e8; color:#11251c; border-color:#cfd6c8;"><span class="hex">#EEF0E8</span><div><div class="name">Bg</div><div class="var">--pv-bg</div></div></div>
+          <div class="ds-sw" style="background:#f7f8f1; color:#11251c; border-color:#cfd6c8;"><span class="hex">#F7F8F1</span><div><div class="name">Paper</div><div class="var">--pv-paper</div></div></div>
+          <div class="ds-sw" style="background:#e7ecdf; color:#11251c;"><span class="hex">#E7ECDF</span><div><div class="name">Paper&nbsp;2</div><div class="var">--pv-paper-2</div></div></div>
+          <div class="ds-sw" style="background:#cfd6c8; color:#11251c;"><span class="hex">#CFD6C8</span><div><div class="name">Line</div><div class="var">--pv-line</div></div></div>
+          <div class="ds-sw" style="background:#5d6f64; color:#fff;"><span class="hex">#5D6F64</span><div><div class="name">Mute</div><div class="var">--pv-mute</div></div></div>
+          <div class="ds-sw" style="background:#11251c; color:#dfe7d8;"><span class="hex">#11251C</span><div><div class="name">Ink</div><div class="var">--pv-ink</div></div></div>
+        </div>
+      </div>
+
+      <div class="ds-block">
+        <div class="ds-block__label"><span class="dot"></span><span class="ds-block__title">Brand & signal</span></div>
+        <div class="ds-grid-6">
+          <div class="ds-sw" style="background:#3F6B54; color:#fff;"><span class="hex">#3F6B54</span><div><div class="name">Sage</div><div class="var">--pv-sage</div></div></div>
+          <div class="ds-sw" style="background:#7fa68f; color:#11251c;"><span class="hex">#7FA68F</span><div><div class="name">Sage soft</div><div class="var">--pv-sage-soft</div></div></div>
+          <div class="ds-sw" style="background:#B8D147; color:#11251c;"><span class="hex">#B8D147</span><div><div class="name">Lime</div><div class="var">--pv-lime</div></div></div>
+          <div class="ds-sw" style="background:#D6764E; color:#fff;"><span class="hex">#D6764E</span><div><div class="name">Coral</div><div class="var">--pv-coral</div></div></div>
+          <div class="ds-sw" style="background:rgba(63,107,84,.08); color:#11251c; border-color:#cfd6c8;"><span class="hex">8% sage</span><div><div class="name">Sage tint</div><div class="var">--pv-sage-tint</div></div></div>
+          <div class="ds-sw" style="background:#22382c; color:#dfe7d8;"><span class="hex">#22382C</span><div><div class="name">Ink 2</div><div class="var">--pv-ink-2</div></div></div>
+        </div>
+      </div>
+
+      <div class="ds-grid-2">
+        <div>
+          <div class="ds-block__label"><span class="dot"></span><span class="ds-block__title">Usage roles</span></div>
+          <table class="ds-tbl">
+            <tr><th>Role</th><th>Token</th></tr>
+            <tr><td>Page background</td><td>--pv-bg</td></tr>
+            <tr><td>Card / surface</td><td>--pv-paper</td></tr>
+            <tr><td>Primary text</td><td>--pv-ink</td></tr>
+            <tr><td>Body text</td><td>--pv-ink-2</td></tr>
+            <tr><td>Eyebrow / label</td><td>--pv-mute</td></tr>
+            <tr><td>Hairline divider</td><td>--pv-line</td></tr>
+            <tr><td>Editorial rule</td><td>--pv-ink</td></tr>
+            <tr><td>Brand accent</td><td>--pv-sage</td></tr>
+            <tr><td>Highlight on ink</td><td>--pv-lime</td></tr>
+            <tr><td>Danger / attention</td><td>--pv-coral</td></tr>
+          </table>
+        </div>
+        <div>
+          <div class="ds-block__label"><span class="dot"></span><span class="ds-block__title">On-ink inversion</span></div>
+          <div class="ds-panel ds-panel--ink pv-on-ink" style="border-radius: var(--pv-r-1);">
+            <div class="pv-eyebrow" style="color: var(--pv-mute); margin-bottom: 10px;">.pv-on-ink scope</div>
+            <div class="pv-h3" style="color: var(--pv-ink); margin-bottom: 8px;">Same tokens, dark surface.</div>
+            <p class="pv-small" style="color: var(--pv-ink-2); margin: 0 0 14px;">Wrap any subtree in <code class="pv-mono" style="color:var(--pv-lime)">.pv-on-ink</code> to flip the surface tokens. Components inside reuse the same variable names.</p>
+            <div class="ds-row">
+              <span class="pv-chip" style="background: var(--pv-paper); color: var(--pv-ink); border-color: var(--pv-line);"><span class="pv-chip__dot pv-chip__dot--live"></span>runtime / live</span>
+              <span class="pv-chip" style="background: var(--pv-paper); color: var(--pv-ink); border-color: var(--pv-line);">model · claude-haiku-4-5</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 02 — Type -->
+    <section id="type" class="ds-section">
+      <div class="ds-section__head">
+        <span class="ds-section__num">02 · Typography</span>
+      </div>
+      <h2 class="ds-section__title">Three voices.</h2>
+      <p class="ds-section__sub">Serif for display, sans for work, mono for truth. Each has a single job — pick the wrong one and the page loses cadence.</p>
+
+      <div class="ds-stack" style="margin-top: var(--pv-6);">
+        <div class="ds-spec">
+          <div class="ds-spec__meta"><span>Instrument Serif</span><span>Display</span><span>Regular · 400</span></div>
+          <div class="pv-serif ds-spec__sample" style="font-size: 96px; line-height: .92; letter-spacing: var(--pv-track-display);">Aa Bb Cc — agents</div>
+          <div class="pv-small" style="margin-top: 12px;">Use for hero, section titles, pull quotes, large numerals. Italic is the only weight shift; lean on it.</div>
+        </div>
+        <div class="ds-spec">
+          <div class="ds-spec__meta"><span>Inter</span><span>UI · body</span><span>500 / 400</span></div>
+          <div class="ds-spec__sample" style="font: 600 36px/1.15 var(--pv-font-sans); letter-spacing: var(--pv-track-tight);">Run agent · view trace · deploy</div>
+          <div class="pv-small" style="margin-top: 12px;">UI labels, body copy, buttons. Tighten letter-spacing on headings; default body is comfortable at -0.005em.</div>
+        </div>
+        <div class="ds-spec">
+          <div class="ds-spec__meta"><span>JetBrains Mono</span><span>Code · meta</span><span>Regular · 400</span></div>
+          <div class="pv-mono ds-spec__sample" style="font-size: 22px; line-height: 1.5;">run_01HX9F2P · 1.84s · $0.0042</div>
+          <div class="pv-small" style="margin-top: 12px;">Eyebrows, chips, IDs, costs, code, terminal. If it came out of the machine, it wears mono.</div>
+        </div>
+      </div>
+
+      <div class="ds-block" style="margin-top: var(--pv-7);">
+        <div class="ds-block__label"><span class="dot"></span><span class="ds-block__title">Scale</span></div>
+        <table class="ds-tbl">
+          <tr><th>Class</th><th>Family</th><th>Size · Line · Track</th><th>Sample</th></tr>
+          <tr><td>.pv-display-1</td><td>Serif 400</td><td>128 / .9 / -.025em</td><td class="pv-serif" style="font-size: 32px;">Display 1</td></tr>
+          <tr><td>.pv-display-2</td><td>Serif 400</td><td>96 / .92 / -.025em</td><td class="pv-serif" style="font-size: 28px;">Display 2</td></tr>
+          <tr><td>.pv-display-3</td><td>Serif 400</td><td>64 / .98 / -.025em</td><td class="pv-serif" style="font-size: 24px;">Display 3</td></tr>
+          <tr><td>.pv-h1</td><td>Sans 600</td><td>40 / 1.1 / -.015em</td><td style="font: 600 20px/1 var(--pv-font-sans);">Heading 1</td></tr>
+          <tr><td>.pv-h2</td><td>Sans 600</td><td>28 / 1.2 / -.015em</td><td style="font: 600 18px/1 var(--pv-font-sans);">Heading 2</td></tr>
+          <tr><td>.pv-h3</td><td>Sans 600</td><td>20 / 1.3 / -.015em</td><td style="font: 600 16px/1 var(--pv-font-sans);">Heading 3</td></tr>
+          <tr><td>.pv-lede</td><td>Sans 400</td><td>19 / 1.55 / -.005em</td><td style="font: 400 15px/1 var(--pv-font-sans);">Lede paragraph</td></tr>
+          <tr><td>.pv-body</td><td>Sans 400</td><td>16 / 1.6 / -.005em</td><td style="font: 400 14px/1 var(--pv-font-sans);">Body copy</td></tr>
+          <tr><td>.pv-small</td><td>Sans 400</td><td>13.5 / 1.55</td><td style="font: 400 12px/1 var(--pv-font-sans);">Small / caption</td></tr>
+          <tr><td>.pv-eyebrow</td><td>Mono 400</td><td>11 / uppercase / .18em</td><td class="pv-eyebrow">EYEBROW · TAG</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <!-- 03 — Space / Radii / Shadow -->
+    <section id="space" class="ds-section">
+      <div class="ds-section__head">
+        <span class="ds-section__num">03 · Space, radii, shadow</span>
+      </div>
+      <h2 class="ds-section__title">Four-base, hairline-first.</h2>
+      <p class="ds-section__sub">Spacing on a 4px grid. Radii live in two camps — editorial sharpness (0–2px) and soft surfaces (8–12px). Shadow is rare; use a hairline first.</p>
+
+      <div class="ds-grid-2" style="margin-top: var(--pv-6);">
+        <div>
+          <div class="ds-block__label"><span class="dot"></span><span class="ds-block__title">Spacing</span></div>
+          <table class="ds-tbl">
+            <tr><th>Token</th><th>px</th><th class="preview">Preview</th></tr>
+            <tr><td>--pv-1</td><td>4</td><td><div class="ds-space-box" style="width: 4px;"></div></td></tr>
+            <tr><td>--pv-2</td><td>8</td><td><div class="ds-space-box" style="width: 8px;"></div></td></tr>
+            <tr><td>--pv-3</td><td>12</td><td><div class="ds-space-box" style="width: 12px;"></div></td></tr>
+            <tr><td>--pv-4</td><td>16</td><td><div class="ds-space-box" style="width: 16px;"></div></td></tr>
+            <tr><td>--pv-5</td><td>24</td><td><div class="ds-space-box" style="width: 24px;"></div></td></tr>
+            <tr><td>--pv-6</td><td>32</td><td><div class="ds-space-box" style="width: 32px;"></div></td></tr>
+            <tr><td>--pv-7</td><td>48</td><td><div class="ds-space-box" style="width: 48px;"></div></td></tr>
+            <tr><td>--pv-8</td><td>64</td><td><div class="ds-space-box" style="width: 64px;"></div></td></tr>
+            <tr><td>--pv-9</td><td>96</td><td><div class="ds-space-box" style="width: 64px; opacity:.5;"></div></td></tr>
+          </table>
+        </div>
+
+        <div class="ds-stack">
+          <div>
+            <div class="ds-block__label"><span class="dot"></span><span class="ds-block__title">Radii</span></div>
+            <table class="ds-tbl">
+              <tr><th>Token</th><th>Value</th><th class="preview">Preview</th></tr>
+              <tr><td>--pv-r-0</td><td>0</td><td><div class="ds-radius-box" style="border-radius: 0;"></div></td></tr>
+              <tr><td>--pv-r-1</td><td>2</td><td><div class="ds-radius-box" style="border-radius: 2px;"></div></td></tr>
+              <tr><td>--pv-r-2</td><td>4</td><td><div class="ds-radius-box" style="border-radius: 4px;"></div></td></tr>
+              <tr><td>--pv-r-3</td><td>8</td><td><div class="ds-radius-box" style="border-radius: 8px;"></div></td></tr>
+              <tr><td>--pv-r-4</td><td>12</td><td><div class="ds-radius-box" style="border-radius: 12px;"></div></td></tr>
+              <tr><td>--pv-r-pill</td><td>999</td><td><div class="ds-radius-box" style="border-radius: 999px; width: 56px;"></div></td></tr>
+            </table>
+            <p class="pv-small" style="margin-top: 12px;">Editorial cards: r-0 to r-1. Buttons & inputs: r-1 to r-2. Soft cards / terminal: r-3 to r-4. Chips: pill.</p>
+          </div>
+
+          <div>
+            <div class="ds-block__label"><span class="dot"></span><span class="ds-block__title">Shadow</span></div>
+            <table class="ds-tbl">
+              <tr><th>Token</th><th>Use</th><th class="preview">Preview</th></tr>
+              <tr><td>--pv-shadow-1</td><td>Subtle elevation</td><td><div class="ds-shadow-box" style="box-shadow: 0 1px 0 rgba(17,37,28,.04);"></div></td></tr>
+              <tr><td>--pv-shadow-2</td><td>Floating panel</td><td><div class="ds-shadow-box" style="box-shadow: 0 8px 24px rgba(17,37,28,.08);"></div></td></tr>
+              <tr><td>--pv-shadow-pop</td><td>Modal / overlay</td><td><div class="ds-shadow-box" style="box-shadow: 0 16px 48px rgba(17,37,28,.16);"></div></td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 04 — Brand -->
+    <section id="brand" class="ds-section">
+      <div class="ds-section__head">
+        <span class="ds-section__num">04 · Brand mark</span>
+      </div>
+      <h2 class="ds-section__title">pv — a circle, an italic.</h2>
+      <p class="ds-section__sub">The mark is two italic letters inside a hairline circle. The wordmark sets in Instrument Serif. The slash separates surface from product.</p>
+
+      <div class="ds-grid-3" style="margin-top: var(--pv-6);">
+        <div class="ds-panel">
+          <div class="pv-eyebrow" style="margin-bottom: var(--pv-4);">Primary</div>
+          <div class="ds-logo">
+            <span class="glyph">pv</span>
+            <span class="wordmark">patientvibes<span class="slash">/</span><span class="product">agents</span></span>
+          </div>
+        </div>
+        <div class="ds-panel">
+          <div class="pv-eyebrow" style="margin-bottom: var(--pv-4);">Mark only</div>
+          <div class="ds-logo">
+            <span class="glyph" style="width: 80px; height: 80px; font-size: 40px;">pv</span>
+          </div>
+        </div>
+        <div class="ds-panel ds-panel--ink pv-on-ink">
+          <div class="pv-eyebrow" style="color: var(--pv-mute); margin-bottom: var(--pv-4);">On ink</div>
+          <div class="ds-logo">
+            <span class="glyph" style="border-color: var(--pv-lime); color: var(--pv-lime);">pv</span>
+            <span class="wordmark" style="color: var(--pv-ink);">patientvibes<span class="slash" style="color: var(--pv-mute);">/</span><span class="product" style="color: var(--pv-lime);">agents</span></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="ds-grid-2" style="margin-top: var(--pv-6);">
+        <div class="ds-block">
+          <div class="ds-block__label"><span class="dot"></span><span class="ds-block__title">Clearspace</span></div>
+          <p class="pv-small" style="margin-bottom: var(--pv-4);">Reserve the height of the circle (1×) on all sides. Never bring text closer than the circle's diameter.</p>
+          <div style="position: relative; padding: 56px; border: 1px dashed var(--pv-line); border-radius: 2px;">
+            <div class="ds-logo">
+              <span class="glyph">pv</span>
+            </div>
+          </div>
+        </div>
+        <div class="ds-block">
+          <div class="ds-block__label"><span class="dot"></span><span class="ds-block__title">Lockup variants</span></div>
+          <div class="ds-stack">
+            <div class="ds-panel" style="display: flex; gap: var(--pv-3); align-items: center;">
+              <span class="ds-logo"><span class="glyph" style="width: 22px; height: 22px; font-size: 11px;">pv</span></span>
+              <span class="pv-mono" style="font-size: 13px;">pv/agents</span>
+              <span class="pv-small" style="margin-left: auto;">favicon / compact</span>
+            </div>
+            <div class="ds-panel">
+              <span class="pv-serif" style="font-size: 48px;">pv<span style="color: var(--pv-sage); font-style: italic;">·</span><span style="color: var(--pv-sage);">agents</span></span>
+              <div class="pv-small" style="margin-top: 8px;">type-only lockup</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 05 — Components -->
+    <section id="components" class="ds-section">
+      <div class="ds-section__head">
+        <span class="ds-section__num">05 · Components</span>
+      </div>
+      <h2 class="ds-section__title">Primitives.</h2>
+      <p class="ds-section__sub">Each component leans on tokens; none invents its own color. If you need a new fill, add a token first.</p>
+
+      <!-- Buttons -->
+      <div class="ds-block" style="margin-top: var(--pv-6);">
+        <div class="ds-block__label"><span class="dot"></span><span class="ds-block__title">Buttons</span></div>
+        <p class="ds-block__desc">Ink-primary for confirm. Sage for ship/deploy. Outline for secondary. Ghost for tertiary nav.</p>
+        <div class="ds-panel">
+          <div class="ds-row" style="gap: var(--pv-3);">
+            <button class="pv-btn pv-btn--primary">Run agent <span class="pv-kbd">⌘⏎</span></button>
+            <button class="pv-btn pv-btn--sage">Deploy</button>
+            <button class="pv-btn">View trace</button>
+            <button class="pv-btn pv-btn--ghost">Read the docs →</button>
+          </div>
+          <div class="ds-row" style="gap: var(--pv-3); margin-top: var(--pv-4);">
+            <button class="pv-btn pv-btn--sm pv-btn--primary">Save</button>
+            <button class="pv-btn pv-btn--sm">Cancel</button>
+            <button class="pv-btn pv-btn--lg pv-btn--sage">Deploy to production</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chips -->
+      <div class="ds-block">
+        <div class="ds-block__label"><span class="dot"></span><span class="ds-block__title">Chips & status</span></div>
+        <p class="ds-block__desc">Pill shape, mono label, optional dot. Reserve the ink chip for "live" surfaces only.</p>
+        <div class="ds-panel">
+          <div class="ds-row" style="gap: var(--pv-3);">
+            <span class="pv-chip"><span class="pv-chip__dot pv-chip__dot--live"></span>runtime / live</span>
+            <span class="pv-chip"><span class="pv-chip__dot"></span>tool · postgres</span>
+            <span class="pv-chip">model · claude-haiku-4-5</span>
+            <span class="pv-chip"><span class="pv-chip__dot pv-chip__dot--err"></span>retry · 1/3</span>
+            <span class="pv-chip pv-chip--ink"><span class="pv-chip__dot pv-chip__dot--live"></span>shipping</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Inputs -->
+      <div class="ds-block">
+        <div class="ds-block__label"><span class="dot"></span><span class="ds-block__title">Inputs</span></div>
+        <p class="ds-block__desc">Label sits above the field as a mono eyebrow. Focus ring is 3px sage-tint over a sage border.</p>
+        <div class="ds-panel" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--pv-4);">
+          <div class="pv-field">
+            <label>agent name</label>
+            <input class="pv-input" value="triage.v3" />
+            <div class="pv-help">Lowercase, dots and hyphens only.</div>
+          </div>
+          <div class="pv-field">
+            <label>model</label>
+            <input class="pv-input" placeholder="claude-haiku-4-5" />
+            <div class="pv-help">Defaults to your workspace setting.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cards -->
+      <div class="ds-block">
+        <div class="ds-block__label"><span class="dot"></span><span class="ds-block__title">Cards</span></div>
+        <p class="ds-block__desc">Two flavors. Editorial (ink border, no radius) for documents and code; soft (line border, r-3) for interactive surfaces.</p>
+        <div class="ds-grid-2">
+          <div class="pv-card">
+            <div class="pv-card__head"><span>agent.ts</span><span>typescript</span></div>
+            <pre class="pv-code"><span class="c">// vibe-code → agent</span>
+<span class="k">export const</span> <span class="fn">triage</span> = <span class="fn">defineAgent</span>({
+  <span class="fn">model</span>: <span class="s">"claude-haiku-4-5"</span>,
+  <span class="fn">tools</span>: [<span class="fn">db</span>, <span class="fn">search</span>, <span class="fn">notify</span>],
+  <span class="fn">budget</span>: { <span class="fn">tokens</span>: <span class="n">12_000</span> },
+});</pre>
+          </div>
+          <div class="pv-card pv-card--soft" style="border-radius: var(--pv-r-3);">
+            <div class="pv-card__head"><span>Run · meta</span><span>01HX9F2P</span></div>
+            <div class="pv-card__body">
+              <dl class="pv-meta">
+                <dt>agent</dt><dd>triage.v3</dd>
+                <dt>steps</dt><dd>14 / 14</dd>
+                <dt>latency</dt><dd>1.84s</dd>
+                <dt>cost</dt><dd>$0.0042</dd>
+                <dt>region</dt><dd>us-east-1</dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Terminal -->
+      <div class="ds-block">
+        <div class="ds-block__label"><span class="dot"></span><span class="ds-block__title">Terminal</span></div>
+        <p class="ds-block__desc">Always dark, always mono. Use for build output, command demos, debugging hero. Don't use as a generic dark card.</p>
+        <div class="pv-terminal">
+          <div class="pv-terminal__bar">
+            <i class="r"></i><i class="y"></i><i class="g"></i>
+            <span class="pv-terminal__title">~/agents/triage</span>
+          </div>
+          <div class="pv-terminal__body">
+            <div><span class="ps">$</span> vibe build triage.v3</div>
+            <div class="dim">  resolving deps... <span class="ok">ok</span></div>
+            <div class="dim">  bundling tools (3)... <span class="ok">ok</span></div>
+            <div><span class="arrow">→</span> compile · 320ms</div>
+            <div><span class="arrow">→</span> deploy · <span class="ok">us-east-1</span></div>
+            <div class="dim">  trace_id=01HX9F2P</div>
+            <div><span class="ps">$</span> <span class="warn">_</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Nav -->
+      <div class="ds-block">
+        <div class="ds-block__label"><span class="dot"></span><span class="ds-block__title">Top navigation</span></div>
+        <p class="ds-block__desc">Editorial ink rule beneath; serif wordmark, sans nav items, mono cta on the right.</p>
+        <div class="ds-panel" style="padding: 0 24px;">
+          <nav class="pv-nav">
+            <div class="pv-nav__brand">
+              <span class="glyph">pv</span>
+              <span>patientvibes <span style="color: var(--pv-mute);">/</span> <span style="color: var(--pv-sage);">agents</span></span>
+            </div>
+            <div class="pv-nav__items">
+              <a>Agents</a>
+              <a>Runs</a>
+              <a>Tools</a>
+              <a>Docs</a>
+              <button class="pv-btn pv-btn--sm pv-btn--primary">Sign in</button>
+            </div>
+          </nav>
+        </div>
+      </div>
+
+      <!-- Pipeline / stats -->
+      <div class="ds-grid-2">
+        <div class="ds-block">
+          <div class="ds-block__label"><span class="dot"></span><span class="ds-block__title">Pipeline</span></div>
+          <p class="ds-block__desc">Dashed sage borders, tinted fills. Use sparingly — one per surface.</p>
+          <div class="ds-panel">
+            <div class="pv-pipe">
+              <div class="pv-pipe__node">intent</div>
+              <div class="pv-pipe__arr">─→</div>
+              <div class="pv-pipe__node">plan</div>
+              <div class="pv-pipe__arr">─→</div>
+              <div class="pv-pipe__node">tools</div>
+              <div class="pv-pipe__arr">─→</div>
+              <div class="pv-pipe__node">ship</div>
+            </div>
+          </div>
+        </div>
+        <div class="ds-block">
+          <div class="ds-block__label"><span class="dot"></span><span class="ds-block__title">Stats</span></div>
+          <p class="ds-block__desc">Serif numerals against a mono label. The number does the work — keep the label small.</p>
+          <div class="ds-panel" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--pv-5);">
+            <div>
+              <div class="pv-stat__label">Runs · 24h</div>
+              <div class="pv-stat__value">1,284</div>
+              <div class="pv-stat__delta">+18% wow</div>
+            </div>
+            <div>
+              <div class="pv-stat__label">p95 latency</div>
+              <div class="pv-stat__value">1.84<span style="font-size: .5em; color: var(--pv-mute);">s</span></div>
+              <div class="pv-stat__delta">−210ms</div>
+            </div>
+            <div>
+              <div class="pv-stat__label">Avg cost</div>
+              <div class="pv-stat__value">$0.004<span style="font-size: .5em; color: var(--pv-mute);">2</span></div>
+              <div class="pv-stat__delta">flat</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 06 — Patterns -->
+    <section id="patterns" class="ds-section">
+      <div class="ds-section__head">
+        <span class="ds-section__num">06 · Patterns</span>
+      </div>
+      <h2 class="ds-section__title">How it composes.</h2>
+      <p class="ds-section__sub">Two patterns cover most pages: the editorial hero (serif display + two-column body) and the work surface (terminal + meta + chips).</p>
+
+      <!-- Hero pattern -->
+      <div class="ds-block" style="margin-top: var(--pv-6);">
+        <div class="ds-block__label"><span class="dot"></span><span class="ds-block__title">Pattern · Editorial hero</span></div>
+        <div class="ds-mock">
+          <div class="ds-mock__bar"><i></i><i></i><i></i></div>
+          <div style="padding: 48px;">
+            <nav class="pv-nav" style="padding-top: 0;">
+              <div class="pv-nav__brand"><span class="glyph">pv</span><span>patientvibes <span style="color: var(--pv-mute);">/</span> <span style="color: var(--pv-sage);">agents</span></span></div>
+              <div class="pv-nav__items">
+                <a>Agents</a><a>Runs</a><a>Tools</a><a>Docs</a>
+                <button class="pv-btn pv-btn--sm pv-btn--primary">Sign in</button>
+              </div>
+            </nav>
+            <div style="height: 56px;"></div>
+            <div class="pv-display-2" style="margin-bottom: 40px;">Quietly <em style="color: var(--pv-sage); font-style: italic;">opinionated</em><br>agent runtimes.</div>
+            <div style="display: grid; grid-template-columns: 1.05fr 1fr; gap: 36px;">
+              <p class="pv-body pv-dropcap" style="column-count: 2; column-gap: 30px; margin: 0;">A development surface for autonomous agents — composable runtimes, deterministic tracing, and a vibe-coding workflow that turns intent into shipping artifacts. Built for the developer who reads the docs once and wants the rest of the day back.</p>
+              <div>
+                <div class="ds-row" style="gap: 10px; margin-bottom: 16px;">
+                  <button class="pv-btn pv-btn--primary">Run agent <span class="pv-kbd">⌘⏎</span></button>
+                  <button class="pv-btn pv-btn--sage">Deploy</button>
+                </div>
+                <div class="ds-row" style="gap: 8px;">
+                  <span class="pv-chip"><span class="pv-chip__dot pv-chip__dot--live"></span>runtime / live</span>
+                  <span class="pv-chip">claude-haiku-4-5</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Work pattern -->
+      <div class="ds-block">
+        <div class="ds-block__label"><span class="dot"></span><span class="ds-block__title">Pattern · Run detail</span></div>
+        <div class="ds-mock">
+          <div class="ds-mock__bar"><i></i><i></i><i></i></div>
+          <div style="padding: 32px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px;">
+            <div>
+              <div class="pv-eyebrow" style="margin-bottom: 8px;">Run · 01HX9F2P</div>
+              <div class="pv-display-3" style="margin-bottom: 16px;">triage<span style="color: var(--pv-sage);">.</span>v3</div>
+              <div class="ds-row" style="gap: 8px; margin-bottom: 20px;">
+                <span class="pv-chip pv-chip--ink"><span class="pv-chip__dot pv-chip__dot--live"></span>shipping</span>
+                <span class="pv-chip">us-east-1</span>
+                <span class="pv-chip">14 steps</span>
+              </div>
+              <div class="pv-terminal">
+                <div class="pv-terminal__bar"><i class="r"></i><i class="y"></i><i class="g"></i><span class="pv-terminal__title">trace · live</span></div>
+                <div class="pv-terminal__body">
+                  <div><span class="ps">$</span> agent.start triage.v3</div>
+                  <div class="dim">  tool.call db.query <span class="ok">(38ms)</span></div>
+                  <div class="dim">  tool.call search.web <span class="ok">(412ms)</span></div>
+                  <div class="warn">  ! retry attempt 1/3</div>
+                  <div><span class="arrow">→</span> plan.decide "escalate"</div>
+                  <div><span class="ps">$</span> <span class="ok">done · 1.84s · $0.0042</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="ds-stack">
+              <div class="pv-card pv-card--soft" style="border-radius: var(--pv-r-3);">
+                <div class="pv-card__head"><span>Meta</span></div>
+                <div class="pv-card__body">
+                  <dl class="pv-meta">
+                    <dt>id</dt><dd>run_01HX9F2P</dd>
+                    <dt>agent</dt><dd>triage.v3</dd>
+                    <dt>steps</dt><dd>14 / 14</dd>
+                    <dt>latency</dt><dd>1.84s</dd>
+                    <dt>cost</dt><dd>$0.0042</dd>
+                  </dl>
+                </div>
+              </div>
+              <div class="pv-card pv-card--soft" style="border-radius: var(--pv-r-3);">
+                <div class="pv-card__head"><span>Topology</span></div>
+                <div class="pv-card__body">
+                  <div class="pv-pipe" style="flex-wrap: wrap;">
+                    <div class="pv-pipe__node">intent</div>
+                    <div class="pv-pipe__arr">─→</div>
+                    <div class="pv-pipe__node">plan</div>
+                    <div class="pv-pipe__arr">─→</div>
+                    <div class="pv-pipe__node">tools</div>
+                    <div class="pv-pipe__arr">─→</div>
+                    <div class="pv-pipe__node">ship</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Doc layout -->
+      <div class="ds-block">
+        <div class="ds-block__label"><span class="dot"></span><span class="ds-block__title">Pattern · Docs page</span></div>
+        <div class="ds-mock">
+          <div class="ds-mock__bar"><i></i><i></i><i></i></div>
+          <div style="padding: 36px 48px;">
+            <div class="pv-eyebrow" style="margin-bottom: 10px;">Guides · 02 / Runtimes</div>
+            <div class="pv-display-3" style="margin-bottom: 12px;">Defining an agent.</div>
+            <p class="pv-lede" style="max-width: 62ch; margin: 0 0 24px;">An agent is a function with tools, a budget, and a model. The runtime handles tracing, retries, and deploys.</p>
+            <hr class="pv-rule" style="margin: 24px 0;">
+            <div class="pv-h2" style="margin-bottom: 12px;">A minimal agent</div>
+            <p class="pv-body" style="max-width: 64ch; margin: 0 0 16px;">Start with <code class="pv-mono" style="color: var(--pv-coral);">defineAgent</code>. The model field is required; everything else has a sensible default.</p>
+            <div class="pv-card">
+              <div class="pv-card__head"><span>agent.ts</span></div>
+              <pre class="pv-code"><span class="k">export const</span> <span class="fn">triage</span> = <span class="fn">defineAgent</span>({
+  <span class="fn">model</span>: <span class="s">"claude-haiku-4-5"</span>,
+});</pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 07 — Voice & usage -->
+    <section id="voice" class="ds-section">
+      <div class="ds-section__head">
+        <span class="ds-section__num">07 · Voice & usage</span>
+      </div>
+      <h2 class="ds-section__title">Read like a developer wrote it.</h2>
+      <p class="ds-section__sub">Direct. Curious. A little dry. Never breathless. Avoid the verbs every AI startup uses.</p>
+
+      <div class="ds-grid-2" style="margin-top: var(--pv-6);">
+        <div class="ds-panel">
+          <div class="pv-eyebrow" style="margin-bottom: var(--pv-4);">Voice — do</div>
+          <div class="ds-rule"><span class="ds-rule__icon ds-rule__icon--do">✓</span><p><strong>Show the artifact.</strong> "1.84s · $0.0042" beats "blazingly fast and affordable" every time.</p></div>
+          <div class="ds-rule"><span class="ds-rule__icon ds-rule__icon--do">✓</span><p><strong>Name the tradeoff.</strong> If something is opinionated, say what you traded away to get it.</p></div>
+          <div class="ds-rule"><span class="ds-rule__icon ds-rule__icon--do">✓</span><p><strong>Lowercase the technical.</strong> <code class="pv-mono">triage.v3</code>, <code class="pv-mono">claude-haiku-4-5</code> — these are filenames, not titles.</p></div>
+          <div class="ds-rule"><span class="ds-rule__icon ds-rule__icon--do">✓</span><p><strong>One italic per page.</strong> Reserve it for the word that carries weight.</p></div>
+        </div>
+        <div class="ds-panel">
+          <div class="pv-eyebrow" style="margin-bottom: var(--pv-4);">Voice — don't</div>
+          <div class="ds-rule"><span class="ds-rule__icon ds-rule__icon--no">✕</span><p><strong>Avoid superlatives.</strong> "Powerful," "intelligent," "revolutionary" — strip them.</p></div>
+          <div class="ds-rule"><span class="ds-rule__icon ds-rule__icon--no">✕</span><p><strong>No emoji.</strong> Use a sage dot or a mono symbol instead.</p></div>
+          <div class="ds-rule"><span class="ds-rule__icon ds-rule__icon--no">✕</span><p><strong>No gradients for decoration.</strong> Gradients carry data (throughput, cost trend) or they don't appear.</p></div>
+          <div class="ds-rule"><span class="ds-rule__icon ds-rule__icon--no">✕</span><p><strong>No drop shadows on text.</strong> Ever.</p></div>
+        </div>
+
+        <div class="ds-panel">
+          <div class="pv-eyebrow" style="margin-bottom: var(--pv-4);">Layout — do</div>
+          <div class="ds-rule"><span class="ds-rule__icon ds-rule__icon--do">✓</span><p>Pair a serif display with mono eyebrows. The eye learns the cadence.</p></div>
+          <div class="ds-rule"><span class="ds-rule__icon ds-rule__icon--do">✓</span><p>Use the ink rule for the top of the page; hairlines everywhere else.</p></div>
+          <div class="ds-rule"><span class="ds-rule__icon ds-rule__icon--do">✓</span><p>Leave the right column negative on hero sections — let the page breathe.</p></div>
+        </div>
+        <div class="ds-panel">
+          <div class="pv-eyebrow" style="margin-bottom: var(--pv-4);">Layout — don't</div>
+          <div class="ds-rule"><span class="ds-rule__icon ds-rule__icon--no">✕</span><p>Don't stack three different border-radii in the same view.</p></div>
+          <div class="ds-rule"><span class="ds-rule__icon ds-rule__icon--no">✕</span><p>Don't use the terminal as a generic dark card. It earns its weight by being rare.</p></div>
+          <div class="ds-rule"><span class="ds-rule__icon ds-rule__icon--no">✕</span><p>Don't decorate empty space. White space is content.</p></div>
+        </div>
+      </div>
+
+      <hr class="pv-rule" style="margin: var(--pv-7) 0;">
+      <div class="pv-eyebrow" style="margin-bottom: 12px;">— End of v0.1 ·  next: motion, charts, dark mode</div>
+      <div class="pv-quote" style="max-width: 60ch;">"From intent to artifact in a single keystroke — no ceremony, no boilerplate."</div>
+    </section>
+
+  </main>
+</div>
+
+</body>
+</html>

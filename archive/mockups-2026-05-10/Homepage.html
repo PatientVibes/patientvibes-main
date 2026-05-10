@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>patientvibes — index</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="design-system/tokens.css">
+<link rel="stylesheet" href="design-system/base.css">
+<link rel="stylesheet" href="design-system/components.css">
+<style>
+  /* page chrome */
+  .hp { max-width: 980px; margin: 0 auto; padding: var(--pv-6) var(--pv-6) var(--pv-9); }
+
+  /* nav row */
+  .hp-nav { display: flex; align-items: center; justify-content: space-between; padding: 8px 0 28px; border-bottom: 1px solid var(--pv-ink); }
+  .hp-nav__brand { display: flex; align-items: center; gap: 12px; }
+  .hp-nav__brand .glyph {
+    width: 32px; height: 32px;
+    border: 1.4px solid var(--pv-sage); color: var(--pv-sage);
+    border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font: italic 16px/1 var(--pv-font-serif);
+  }
+  .hp-nav__brand .name { font: 400 22px/1 var(--pv-font-serif); letter-spacing: var(--pv-track-tight); }
+  .hp-nav__meta { font: 400 11px/1 var(--pv-font-mono); text-transform: uppercase; letter-spacing: var(--pv-track-eyebrow); color: var(--pv-mute); display: flex; gap: var(--pv-5); align-items: center; }
+  .hp-nav__meta a { color: var(--pv-ink-2); text-decoration: none; transition: color var(--pv-dur-1) var(--pv-ease); }
+  .hp-nav__meta a:hover { color: var(--pv-sage); }
+  .hp-nav__meta .live { display: inline-flex; align-items: center; gap: 6px; color: var(--pv-ink); }
+  .hp-nav__meta .live i { width: 6px; height: 6px; border-radius: 50%; background: var(--pv-sage); box-shadow: 0 0 0 2px var(--pv-sage-tint); }
+
+  /* hero */
+  .hp-hero { padding: var(--pv-8) 0 var(--pv-7); }
+  .hp-hero__greet { font: 400 11px/1 var(--pv-font-mono); text-transform: uppercase; letter-spacing: var(--pv-track-eyebrow); color: var(--pv-mute); margin-bottom: 24px; display: inline-flex; align-items: center; gap: 10px; }
+  .hp-hero__greet i { width: 4px; height: 4px; background: var(--pv-sage); border-radius: 50%; }
+  .hp-hero__title { font-family: var(--pv-font-serif); font-weight: 400; font-size: clamp(56px, 8vw, 104px); line-height: .94; letter-spacing: var(--pv-track-display); margin: 0 0 36px; max-width: 14ch; }
+  .hp-hero__title em { font-style: italic; color: var(--pv-sage); }
+  .hp-hero__intro { display: grid; grid-template-columns: 1.1fr .9fr; gap: 48px; align-items: start; }
+  .hp-hero__intro p { font-size: 16.5px; line-height: 1.62; color: var(--pv-ink-2); margin: 0; max-width: 50ch; }
+  .hp-hero__intro p + p { margin-top: 14px; }
+  .hp-hero__intro p a { color: var(--pv-sage); text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
+
+  .hp-card-tags { background: var(--pv-paper); border: 1px solid var(--pv-line); border-radius: var(--pv-r-1); padding: 18px 20px; }
+  .hp-card-tags__head { font: 400 11px/1 var(--pv-font-mono); text-transform: uppercase; letter-spacing: var(--pv-track-eyebrow); color: var(--pv-mute); margin-bottom: 14px; display: flex; justify-content: space-between; }
+  .hp-card-tags__list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .hp-card-tags__list a { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border: 1px solid var(--pv-line); border-radius: var(--pv-r-pill); font: 400 11.5px/1.6 var(--pv-font-mono); color: var(--pv-ink-2); background: var(--pv-bg); text-decoration: none; transition: border-color var(--pv-dur-1) var(--pv-ease), color var(--pv-dur-1) var(--pv-ease); }
+  .hp-card-tags__list a:hover { border-color: var(--pv-sage); color: var(--pv-sage); }
+  .hp-card-tags__list a .n { color: var(--pv-mute); font-size: 10.5px; }
+
+  /* section header */
+  .hp-sec { padding-top: var(--pv-8); }
+  .hp-sec__head { display: flex; align-items: baseline; justify-content: space-between; padding-bottom: 18px; border-bottom: 1px solid var(--pv-line); margin-bottom: var(--pv-5); }
+  .hp-sec__title { display: flex; align-items: baseline; gap: 16px; }
+  .hp-sec__num { font: 400 12px/1 var(--pv-font-mono); color: var(--pv-sage); letter-spacing: var(--pv-track-eyebrow); text-transform: uppercase; }
+  .hp-sec__name { font-family: var(--pv-font-serif); font-size: 38px; line-height: 1; letter-spacing: var(--pv-track-tight); font-weight: 400; }
+  .hp-sec__count { font: 400 11px/1 var(--pv-font-mono); color: var(--pv-mute); text-transform: uppercase; letter-spacing: var(--pv-track-eyebrow); }
+
+  /* project rows */
+  .hp-proj { display: grid; grid-template-columns: 56px 1fr auto; gap: 24px; align-items: start; padding: 22px 0; border-bottom: 1px solid var(--pv-line); text-decoration: none; color: inherit; transition: background var(--pv-dur-1) var(--pv-ease); position: relative; }
+  .hp-proj:hover { background: var(--pv-paper); }
+  .hp-proj:hover .hp-proj__name { color: var(--pv-sage); }
+  .hp-proj:hover .hp-proj__arrow { transform: translateX(3px); color: var(--pv-sage); }
+  .hp-proj__id { font: 400 11px/1.4 var(--pv-font-mono); color: var(--pv-mute); letter-spacing: var(--pv-track-eyebrow); text-transform: uppercase; padding-top: 3px; }
+  .hp-proj__body { min-width: 0; }
+  .hp-proj__head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
+  .hp-proj__name { font: 500 19px/1.2 var(--pv-font-sans); letter-spacing: var(--pv-track-tight); color: var(--pv-ink); transition: color var(--pv-dur-1) var(--pv-ease); }
+  .hp-proj__name .v { color: var(--pv-mute); font-weight: 400; }
+  .hp-proj__status { display: inline-flex; align-items: center; gap: 5px; font: 400 10.5px/1 var(--pv-font-mono); text-transform: uppercase; letter-spacing: var(--pv-track-eyebrow); padding: 3px 8px; border-radius: var(--pv-r-pill); border: 1px solid var(--pv-line); color: var(--pv-ink-2); }
+  .hp-proj__status i { width: 5px; height: 5px; border-radius: 50%; background: var(--pv-mute); }
+  .hp-proj__status--live i { background: var(--pv-sage); box-shadow: 0 0 0 2px var(--pv-sage-tint); }
+  .hp-proj__status--build i { background: var(--pv-coral); }
+  .hp-proj__status--draft i { background: var(--pv-line); }
+  .hp-proj__status--shipped i { background: var(--pv-sage-soft); }
+  .hp-proj__desc { font-size: 14.5px; line-height: 1.55; color: var(--pv-ink-2); margin: 0; max-width: 62ch; }
+  .hp-proj__meta { display: flex; gap: 14px; margin-top: 10px; font: 400 11.5px/1 var(--pv-font-mono); color: var(--pv-mute); letter-spacing: 0; flex-wrap: wrap; }
+  .hp-proj__meta .k { color: var(--pv-mute); }
+  .hp-proj__meta .v { color: var(--pv-ink-2); }
+  .hp-proj__date { font: 400 11.5px/1.4 var(--pv-font-mono); color: var(--pv-mute); white-space: nowrap; padding-top: 4px; }
+  .hp-proj__arrow { display: inline-block; margin-left: 6px; color: var(--pv-mute); transition: transform var(--pv-dur-1) var(--pv-ease), color var(--pv-dur-1) var(--pv-ease); }
+
+  /* notes (writing) — editorial */
+  .hp-note { display: grid; grid-template-columns: 88px 1fr auto; gap: 24px; padding: 18px 0; border-bottom: 1px solid var(--pv-line); align-items: baseline; text-decoration: none; color: inherit; transition: background var(--pv-dur-1) var(--pv-ease); }
+  .hp-note:hover { background: var(--pv-paper); }
+  .hp-note:hover .hp-note__title { color: var(--pv-sage); }
+  .hp-note__date { font: 400 11px/1 var(--pv-font-mono); color: var(--pv-mute); letter-spacing: var(--pv-track-eyebrow); text-transform: uppercase; }
+  .hp-note__title { font-family: var(--pv-font-serif); font-size: 22px; line-height: 1.2; letter-spacing: var(--pv-track-tight); transition: color var(--pv-dur-1) var(--pv-ease); }
+  .hp-note__title em { font-style: italic; color: var(--pv-sage); }
+  .hp-note__read { font: 400 11px/1 var(--pv-font-mono); color: var(--pv-mute); letter-spacing: var(--pv-track-eyebrow); text-transform: uppercase; white-space: nowrap; }
+
+  /* now playing */
+  .hp-now { display: grid; grid-template-columns: 1.05fr .95fr; gap: 32px; align-items: start; padding: var(--pv-6) 0 0; }
+  .hp-now__body { padding-top: 4px; }
+  .hp-now__quote { font-family: var(--pv-font-serif); font-style: italic; font-size: 26px; line-height: 1.25; letter-spacing: var(--pv-track-tight); color: var(--pv-ink); border-left: 2px solid var(--pv-sage); padding-left: 18px; margin: 0 0 16px; }
+  .hp-now__sub { font-size: 14.5px; line-height: 1.55; color: var(--pv-ink-2); max-width: 50ch; margin: 0; }
+
+  .hp-now__panel { background: var(--pv-paper); border: 1px solid var(--pv-line); border-radius: var(--pv-r-1); padding: 18px 20px; }
+  .hp-now__panel-head { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid var(--pv-line); font: 400 11px/1 var(--pv-font-mono); text-transform: uppercase; letter-spacing: var(--pv-track-eyebrow); color: var(--pv-mute); }
+  .hp-now__panel-head .right { color: var(--pv-ink-2); display: inline-flex; align-items: center; gap: 6px; }
+  .hp-now__panel-head .right i { width: 5px; height: 5px; border-radius: 50%; background: var(--pv-sage); box-shadow: 0 0 0 2px var(--pv-sage-tint); }
+  .hp-now__list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+  .hp-now__list li { display: grid; grid-template-columns: 18px 1fr auto; gap: 10px; align-items: center; font-size: 14px; }
+  .hp-now__list li .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--pv-sage-soft); justify-self: center; }
+  .hp-now__list li.shipped .dot { background: var(--pv-sage); }
+  .hp-now__list li.queued .dot { background: var(--pv-line); }
+  .hp-now__list li .label { color: var(--pv-ink); }
+  .hp-now__list li .label em { color: var(--pv-mute); font-style: normal; font: 400 11.5px/1 var(--pv-font-mono); }
+  .hp-now__list li .when { font: 400 11.5px/1 var(--pv-font-mono); color: var(--pv-mute); text-transform: uppercase; letter-spacing: var(--pv-track-eyebrow); }
+
+  /* roadmap row — small terminal */
+  .hp-term-wrap { margin-top: 20px; }
+
+  /* footer */
+  .hp-foot { margin-top: var(--pv-8); padding-top: var(--pv-5); border-top: 1px solid var(--pv-ink); display: flex; justify-content: space-between; align-items: end; flex-wrap: wrap; gap: 24px; }
+  .hp-foot__signoff { font-family: var(--pv-font-serif); font-size: 28px; line-height: 1.1; max-width: 22ch; letter-spacing: var(--pv-track-tight); }
+  .hp-foot__signoff em { font-style: italic; color: var(--pv-sage); }
+  .hp-foot__links { display: flex; flex-direction: column; gap: 6px; text-align: right; font: 400 12px/1.4 var(--pv-font-mono); color: var(--pv-mute); }
+  .hp-foot__links a { color: var(--pv-ink-2); text-decoration: none; }
+  .hp-foot__links a:hover { color: var(--pv-sage); }
+  .hp-foot__colophon { font: 400 11px/1.4 var(--pv-font-mono); color: var(--pv-mute); text-transform: uppercase; letter-spacing: var(--pv-track-eyebrow); margin-top: 24px; width: 100%; padding-top: 18px; border-top: 1px solid var(--pv-line); display: flex; justify-content: space-between; }
+
+  @media (max-width: 720px) {
+    .hp-hero__intro, .hp-now { grid-template-columns: 1fr; }
+    .hp-proj { grid-template-columns: 44px 1fr; }
+    .hp-proj__date { display: none; }
+    .hp-note { grid-template-columns: 72px 1fr; }
+    .hp-note__read { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hp">
+
+  <!-- ── Nav ── -->
+  <nav class="hp-nav">
+    <div class="hp-nav__brand">
+      <span class="glyph">pv</span>
+      <span class="name">patientvibes</span>
+    </div>
+    <div class="hp-nav__meta">
+      <a href="#projects">Projects</a>
+      <a href="#notes">Notes</a>
+      <a href="#now">Now</a>
+      <span class="live"><i></i>online</span>
+    </div>
+  </nav>
+
+  <!-- ── Hero ── -->
+  <header class="hp-hero">
+    <div class="hp-hero__greet"><i></i>Index · v3 · updated today</div>
+    <h1 class="hp-hero__title">A workshop for <em>patient</em> things.</h1>
+    <div class="hp-hero__intro">
+      <div>
+        <p>I build slow software — agents, the tools they need, and the harnesses that keep them honest. This is where the finished work lives, and where the half-finished work gets honest about it.</p>
+        <p>Most of it is published as a public catalog at <a href="https://agents.patientvibes.io">agents.patientvibes.io</a> — skills, tools, and harnesses, READMEs pulled live from each source repo. Soon: 3D-printed parts and an ESP32 build my son keeps asking me to finish.</p>
+      </div>
+      <aside class="hp-card-tags">
+        <div class="hp-card-tags__head"><span>Tags</span><span>10</span></div>
+        <div class="hp-card-tags__list">
+          <a href="#"><span>tool</span><span class="n">8</span></a>
+          <a href="#"><span>harness</span><span class="n">1</span></a>
+          <a href="#"><span>skill</span><span class="n">1</span></a>
+          <a href="#"><span>ocr</span><span class="n">4</span></a>
+          <a href="#"><span>kindle</span><span class="n">3</span></a>
+          <a href="#"><span>pr-review</span><span class="n">2</span></a>
+          <a href="#"><span>esp32</span><span class="n">1</span></a>
+          <a href="#"><span>3d-print</span><span class="n">1</span></a>
+          <a href="#"><span>essay</span><span class="n">3</span></a>
+        </div>
+      </aside>
+    </div>
+  </header>
+
+  <!-- ── Harnesses ── -->
+  <section id="projects" class="hp-sec">
+    <div class="hp-sec__head">
+      <div class="hp-sec__title">
+        <span class="hp-sec__num">01 · Harnesses</span>
+        <h2 class="hp-sec__name">The orchestrators.</h2>
+      </div>
+      <span class="hp-sec__count">01 entry</span>
+    </div>
+
+    <a class="hp-proj" href="https://agents.patientvibes.io">
+      <span class="hp-proj__id">H–01</span>
+      <div class="hp-proj__body">
+        <div class="hp-proj__head">
+          <span class="hp-proj__name">agent-harness-kindle-pipeline <span class="hp-proj__arrow">→</span></span>
+          <span class="hp-proj__status hp-proj__status--live"><i></i>dev</span>
+        </div>
+        <p class="hp-proj__desc">Orchestrator for the Kindle Scribe pipeline. Subprocess-calls each <code class="pv-mono" style="color:var(--pv-coral);font-size:13px;">agent-tool-*</code> CLI in sequence per book listed in <code class="pv-mono" style="color:var(--pv-coral);font-size:13px;">books.json</code>. Source PDF → Marker OCR → figure scan → strip pipeline → LLM proofread → book-builder PDF + Obsidian export.</p>
+        <div class="hp-proj__meta">
+          <span><span class="k">composes ·</span> <span class="v">8 tools</span></span>
+          <span><span class="k">tags ·</span> <span class="v">harness · kindle · ocr</span></span>
+        </div>
+      </div>
+      <div class="hp-proj__date">2026 · 04</div>
+    </a>
+  </section>
+
+  <!-- ── Tools ── -->
+  <section class="hp-sec">
+    <div class="hp-sec__head">
+      <div class="hp-sec__title">
+        <span class="hp-sec__num">02 · Tools</span>
+        <h2 class="hp-sec__name">Single-purpose CLIs.</h2>
+      </div>
+      <span class="hp-sec__count">08 entries</span>
+    </div>
+
+    <a class="hp-proj" href="https://agents.patientvibes.io">
+      <span class="hp-proj__id">T–01</span>
+      <div class="hp-proj__body">
+        <div class="hp-proj__head">
+          <span class="hp-proj__name">agent-tool-book-builder <span class="hp-proj__arrow">→</span></span>
+          <span class="hp-proj__status hp-proj__status--live"><i></i>dev</span>
+        </div>
+        <p class="hp-proj__desc">Renders Marker-OCR'd markdown into a typeset Kindle Scribe PDF (with annotation margins) plus an Obsidian-compatible markdown export. Handles chapters, images, blockquotes, figures.</p>
+        <div class="hp-proj__meta"><span><span class="k">tags ·</span> <span class="v">tool · kindle</span></span></div>
+      </div>
+      <div class="hp-proj__date">2026 · 04</div>
+    </a>
+
+    <a class="hp-proj" href="https://agents.patientvibes.io">
+      <span class="hp-proj__id">T–02</span>
+      <div class="hp-proj__body">
+        <div class="hp-proj__head">
+          <span class="hp-proj__name">agent-tool-llm-proofreader <span class="hp-proj__arrow">→</span></span>
+          <span class="hp-proj__status hp-proj__status--live"><i></i>dev</span>
+        </div>
+        <p class="hp-proj__desc">LLM-powered OCR proofreading agent. A deterministic pre-pass surfaces likely-issue regions; a verifier subagent reviews each fix before it's applied. Persistent memory of known false positives accumulates across runs.</p>
+        <div class="hp-proj__meta"><span><span class="k">tags ·</span> <span class="v">tool · ocr · agent</span></span></div>
+      </div>
+      <div class="hp-proj__date">2026 · 04</div>
+    </a>
+
+    <a class="hp-proj" href="https://agents.patientvibes.io">
+      <span class="hp-proj__id">T–03</span>
+      <div class="hp-proj__body">
+        <div class="hp-proj__head">
+          <span class="hp-proj__name">agent-tool-marker-cleanup <span class="hp-proj__arrow">→</span></span>
+          <span class="hp-proj__status hp-proj__status--live"><i></i>dev</span>
+        </div>
+        <p class="hp-proj__desc">Three deterministic CLIs for cleaning Marker OCR output before LLM proofreading. They run as a strip pipeline: <code class="pv-mono" style="color:var(--pv-coral);font-size:13px;">strip-marker-artifacts</code> → <code class="pv-mono" style="color:var(--pv-coral);font-size:13px;">strip-back-matter</code> → <code class="pv-mono" style="color:var(--pv-coral);font-size:13px;">clean-markdown</code>.</p>
+        <div class="hp-proj__meta"><span><span class="k">tags ·</span> <span class="v">tool · ocr</span></span></div>
+      </div>
+      <div class="hp-proj__date">2026 · 03</div>
+    </a>
+
+    <a class="hp-proj" href="https://agents.patientvibes.io">
+      <span class="hp-proj__id">T–04</span>
+      <div class="hp-proj__body">
+        <div class="hp-proj__head">
+          <span class="hp-proj__name">agent-tool-figure-scanner <span class="hp-proj__arrow">→</span></span>
+          <span class="hp-proj__status hp-proj__status--live"><i></i>dev</span>
+        </div>
+        <p class="hp-proj__desc">Scans source PDFs for figure / table / diagram references and produces a manifest of which were extracted and which are missing. Used by the kindle-pipeline harness as a pre-step before LLM proofreading.</p>
+        <div class="hp-proj__meta"><span><span class="k">tags ·</span> <span class="v">tool · ocr</span></span></div>
+      </div>
+      <div class="hp-proj__date">2026 · 03</div>
+    </a>
+
+    <a class="hp-proj" href="https://agents.patientvibes.io">
+      <span class="hp-proj__id">T–05</span>
+      <div class="hp-proj__body">
+        <div class="hp-proj__head">
+          <span class="hp-proj__name">agent-tool-pdf-builder <span class="hp-proj__arrow">→</span></span>
+          <span class="hp-proj__status hp-proj__status--live"><i></i>dev</span>
+        </div>
+        <p class="hp-proj__desc">Reportlab-based PDF builder library. Title pages, typography, margins, figure placeholders. Used as a library by <code class="pv-mono" style="color:var(--pv-coral);font-size:13px;">agent-tool-book-builder</code> (and as a smoke-test CLI for direct invocation).</p>
+        <div class="hp-proj__meta"><span><span class="k">tags ·</span> <span class="v">tool · pdf</span></span></div>
+      </div>
+      <div class="hp-proj__date">2026 · 03</div>
+    </a>
+
+    <a class="hp-proj" href="https://agents.patientvibes.io">
+      <span class="hp-proj__id">T–06</span>
+      <div class="hp-proj__body">
+        <div class="hp-proj__head">
+          <span class="hp-proj__name">agent-tool-pr-reviewer <span class="hp-proj__arrow">→</span></span>
+          <span class="hp-proj__status hp-proj__status--live"><i></i>dev</span>
+        </div>
+        <p class="hp-proj__desc">CLI that reviews the current git branch's diff against a base ref using a single Pydantic AI call. Emits a typed <code class="pv-mono" style="color:var(--pv-coral);font-size:13px;">findings.json</code> plus a human-readable <code class="pv-mono" style="color:var(--pv-coral);font-size:13px;">review-output.md</code>.</p>
+        <div class="hp-proj__meta"><span><span class="k">tags ·</span> <span class="v">tool · pr-review</span></span></div>
+      </div>
+      <div class="hp-proj__date">2026 · 02</div>
+    </a>
+
+    <a class="hp-proj" href="https://agents.patientvibes.io">
+      <span class="hp-proj__id">T–07</span>
+      <div class="hp-proj__body">
+        <div class="hp-proj__head">
+          <span class="hp-proj__name">agent-tool-prose-quality <span class="hp-proj__arrow">→</span></span>
+          <span class="hp-proj__status hp-proj__status--live"><i></i>dev</span>
+        </div>
+        <p class="hp-proj__desc">Prose quality analyzer. Computes sentence-length stats, lexical density, and other readable signals over markdown / plain text.</p>
+        <div class="hp-proj__meta"><span><span class="k">tags ·</span> <span class="v">tool · prose</span></span></div>
+      </div>
+      <div class="hp-proj__date">2026 · 02</div>
+    </a>
+
+    <a class="hp-proj" href="https://agents.patientvibes.io">
+      <span class="hp-proj__id">T–08</span>
+      <div class="hp-proj__body">
+        <div class="hp-proj__head">
+          <span class="hp-proj__name">agent-tool-scrape-sources <span class="hp-proj__arrow">→</span></span>
+          <span class="hp-proj__status hp-proj__status--live"><i></i>dev</span>
+        </div>
+        <p class="hp-proj__desc">Fetches web essays and articles as clean markdown with YAML frontmatter (title, author, source URL, fetch date). Used by the kindle-pipeline harness as a source ingestion stage.</p>
+        <div class="hp-proj__meta"><span><span class="k">tags ·</span> <span class="v">tool · ingest</span></span></div>
+      </div>
+      <div class="hp-proj__date">2026 · 01</div>
+    </a>
+  </section>
+
+  <!-- ── Skills ── -->
+  <section class="hp-sec">
+    <div class="hp-sec__head">
+      <div class="hp-sec__title">
+        <span class="hp-sec__num">03 · Skills</span>
+        <h2 class="hp-sec__name">For Claude Code.</h2>
+      </div>
+      <span class="hp-sec__count">01 entry</span>
+    </div>
+
+    <a class="hp-proj" href="https://agents.patientvibes.io">
+      <span class="hp-proj__id">S–01</span>
+      <div class="hp-proj__body">
+        <div class="hp-proj__head">
+          <span class="hp-proj__name">pr-review-tools <span class="hp-proj__arrow">→</span></span>
+          <span class="hp-proj__status hp-proj__status--live"><i></i>dev</span>
+        </div>
+        <p class="hp-proj__desc">My personal Claude Code plugin marketplace — skills I keep reaching for during code review, packaged so they travel.</p>
+        <div class="hp-proj__meta"><span><span class="k">tags ·</span> <span class="v">skill · pr-review</span></span></div>
+      </div>
+      <div class="hp-proj__date">2026 · 02</div>
+    </a>
+  </section>
+
+  <!-- ── On the bench (non-agent) ── -->
+  <section class="hp-sec">
+    <div class="hp-sec__head">
+      <div class="hp-sec__title">
+        <span class="hp-sec__num">04 · Workshop</span>
+        <h2 class="hp-sec__name">Off the screen.</h2>
+      </div>
+      <span class="hp-sec__count">02 entries</span>
+    </div>
+
+    <a class="hp-proj" href="#">
+      <span class="hp-proj__id">W–01</span>
+      <div class="hp-proj__body">
+        <div class="hp-proj__head">
+          <span class="hp-proj__name">hotel <span class="v">/ esp32 door scanner</span> <span class="hp-proj__arrow">→</span></span>
+          <span class="hp-proj__status hp-proj__status--build"><i></i>building</span>
+        </div>
+        <p class="hp-proj__desc">My son got tired of asking for the lights. Now he swipes a hotel keycard, the bedroom lights come up, and the speaker says hi back. ESP32, an RFID reader, and far too much enthusiasm.</p>
+        <div class="hp-proj__meta">
+          <span><span class="k">hw ·</span> <span class="v">esp32 · rc522 · ws2812</span></span>
+          <span><span class="k">tags ·</span> <span class="v">esp32 · home</span></span>
+        </div>
+      </div>
+      <div class="hp-proj__date">2025 · 12</div>
+    </a>
+
+    <a class="hp-proj" href="#">
+      <span class="hp-proj__id">W–02</span>
+      <div class="hp-proj__body">
+        <div class="hp-proj__head">
+          <span class="hp-proj__name">desk parts <span class="v">/ small printed things</span> <span class="hp-proj__arrow">→</span></span>
+          <span class="hp-proj__status hp-proj__status--draft"><i></i>drafting</span>
+        </div>
+        <p class="hp-proj__desc">A collection-in-progress of printable parts I've designed for myself — cable combs, monitor risers, mounts for the things that don't ship with mounts. STL + notes on what failed before it worked.</p>
+        <div class="hp-proj__meta">
+          <span><span class="k">tool ·</span> <span class="v">fusion 360 · prusa mk4</span></span>
+          <span><span class="k">tags ·</span> <span class="v">3d-print</span></span>
+        </div>
+      </div>
+      <div class="hp-proj__date">2025 · 11</div>
+    </a>
+  </section>
+
+  <!-- ── Notes ── -->
+  <section id="notes" class="hp-sec">
+    <div class="hp-sec__head">
+      <div class="hp-sec__title">
+        <span class="hp-sec__num">05 · Notes</span>
+        <h2 class="hp-sec__name">Things I'm writing about.</h2>
+      </div>
+      <span class="hp-sec__count">04 entries</span>
+    </div>
+
+    <a class="hp-note" href="#">
+      <span class="hp-note__date">2026 · 04 · 18</span>
+      <span class="hp-note__title">On <em>patient</em> agents — why I stopped optimizing for fast.</span>
+      <span class="hp-note__read">7 min</span>
+    </a>
+    <a class="hp-note" href="#">
+      <span class="hp-note__date">2026 · 04 · 02</span>
+      <span class="hp-note__title">The harness comes first. The model comes last.</span>
+      <span class="hp-note__read">5 min</span>
+    </a>
+    <a class="hp-note" href="#">
+      <span class="hp-note__date">2026 · 03 · 21</span>
+      <span class="hp-note__title">Tools should be <em>boring</em>, like good libraries.</span>
+      <span class="hp-note__read">4 min</span>
+    </a>
+    <a class="hp-note" href="#">
+      <span class="hp-note__date">2026 · 02 · 09</span>
+      <span class="hp-note__title">A weekend with the ESP32 — notes for next time.</span>
+      <span class="hp-note__read">6 min</span>
+    </a>
+  </section>
+
+  <!-- ── Now ── -->
+  <section id="now" class="hp-sec">
+    <div class="hp-sec__head">
+      <div class="hp-sec__title">
+        <span class="hp-sec__num">06 · Now</span>
+        <h2 class="hp-sec__name">What's on the bench.</h2>
+      </div>
+      <span class="hp-sec__count">updated 2d ago</span>
+    </div>
+
+    <div class="hp-now">
+      <div class="hp-now__body">
+        <p class="hp-now__quote">"Building slowly is the only way I know how to build things I keep using."</p>
+        <p class="hp-now__sub">Right now I'm cleaning up the harness write-up, running triage in production against my own inbox, and trying to teach the ESP32 to recognize three different cards before it pretends to be a butler.</p>
+      </div>
+      <div class="hp-now__panel">
+        <div class="hp-now__panel-head">
+          <span>Bench · this week</span>
+          <span class="right"><i></i>2 in flight</span>
+        </div>
+        <ul class="hp-now__list">
+          <li class="shipped"><span class="dot"></span><span class="label">agents.patientvibes.io · v1 catalog <em>· site</em></span><span class="when">today</span></li>
+          <li><span class="dot"></span><span class="label">llm-proofreader · false-positive memory <em>· tool</em></span><span class="when">in&nbsp;flight</span></li>
+          <li><span class="dot"></span><span class="label">kindle-pipeline · second book <em>· harness</em></span><span class="when">in&nbsp;flight</span></li>
+          <li class="queued"><span class="dot"></span><span class="label">hotel · multi-card support <em>· esp32</em></span><span class="when">queued</span></li>
+          <li class="queued"><span class="dot"></span><span class="label">desk parts · cable comb v2 <em>· 3d-print</em></span><span class="when">queued</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="hp-term-wrap">
+      <div class="pv-terminal">
+        <div class="pv-terminal__bar">
+          <i class="r"></i><i class="y"></i><i class="g"></i>
+          <span class="pv-terminal__title">~/pv · last run</span>
+        </div>
+        <div class="pv-terminal__body">
+          <div><span class="ps">$</span> kindle-pipeline run books.json</div>
+          <div class="dim">  marker-ocr · 412 pages <span class="ok">ok</span></div>
+          <div class="dim">  figure-scanner · 38 figures, 2 missing <span class="warn">!</span></div>
+          <div class="dim">  strip pipeline (3 stages)... <span class="ok">ok</span></div>
+          <div><span class="arrow">→</span> llm-proofreader · 14 fixes proposed, 12 accepted</div>
+          <div class="dim">  book-builder · scribe.pdf + obsidian.md</div>
+          <div><span class="ps">$</span> <span class="ok">done · 6m 12s · $0.84</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Footer ── -->
+  <footer class="hp-foot">
+    <div class="hp-foot__signoff">
+      Built in the <em>open</em>,<br>shipped when it's ready.
+    </div>
+    <div class="hp-foot__links">
+      <a href="#">github · /patientvibes</a>
+      <a href="#">rss · /index.xml</a>
+      <a href="#">email · <span class="__cf_email__" data-cfemail="8ee6e7cefeeffae7ebe0faf8e7ecebfda0e7e1">[email&#160;protected]</span></a>
+    </div>
+    <div class="hp-foot__colophon">
+      <span>© patientvibes · 2026</span>
+      <span>set in instrument serif, inter, jetbrains mono</span>
+    </div>
+  </footer>
+
+</div>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script></body>
+</html>

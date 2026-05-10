@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>agent-harness-kindle-pipeline — patientvibes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="design-system/tokens.css">
+<link rel="stylesheet" href="design-system/base.css">
+<link rel="stylesheet" href="design-system/components.css">
+<style>
+  .pp { max-width: 920px; margin: 0 auto; padding: var(--pv-6) var(--pv-6) var(--pv-9); }
+  .pp-nav { display: flex; align-items: center; justify-content: space-between; padding: 8px 0 24px; border-bottom: 1px solid var(--pv-ink); margin-bottom: var(--pv-7); }
+  .pp-nav__brand { display: flex; align-items: center; gap: 12px; }
+  .pp-nav__brand .glyph { width: 28px; height: 28px; border: 1.4px solid var(--pv-sage); color: var(--pv-sage); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font: italic 14px/1 var(--pv-font-serif); }
+  .pp-nav__brand .name { font: 400 18px/1 var(--pv-font-serif); }
+  .pp-nav__crumbs { font: 400 12px/1 var(--pv-font-mono); color: var(--pv-mute); text-transform: uppercase; letter-spacing: var(--pv-track-eyebrow); }
+  .pp-nav__crumbs a { color: var(--pv-ink-2); text-decoration: none; }
+  .pp-nav__crumbs .sep { color: var(--pv-line); margin: 0 8px; }
+
+  .pp-head__eyebrow { font: 400 11px/1 var(--pv-font-mono); color: var(--pv-sage); text-transform: uppercase; letter-spacing: var(--pv-track-eyebrow); margin-bottom: 16px; }
+  .pp-head__title { font-family: var(--pv-font-serif); font-weight: 400; font-size: clamp(48px, 7vw, 84px); line-height: .96; letter-spacing: var(--pv-track-display); margin: 0 0 20px; }
+  .pp-head__title em { font-style: italic; color: var(--pv-sage); }
+  .pp-head__lede { font-size: 18px; line-height: 1.55; color: var(--pv-ink-2); max-width: 60ch; margin: 0; }
+
+  .pp-meta-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--pv-line); }
+
+  .pp-grid { display: grid; grid-template-columns: 1fr 280px; gap: 56px; margin-top: var(--pv-7); align-items: start; }
+  @media (max-width: 760px) { .pp-grid { grid-template-columns: 1fr; } }
+
+  .pp-prose h2 { font-family: var(--pv-font-serif); font-weight: 400; font-size: 36px; line-height: 1.05; letter-spacing: var(--pv-track-display); margin: 48px 0 16px; }
+  .pp-prose h2:first-child { margin-top: 0; }
+  .pp-prose h3 { font: 600 18px/1.3 var(--pv-font-sans); letter-spacing: var(--pv-track-tight); margin: 32px 0 10px; }
+  .pp-prose p { font-size: 16.5px; line-height: 1.66; color: var(--pv-ink-2); margin: 0 0 16px; }
+  .pp-prose p code, .pp-prose li code { font: 400 13.5px/1.3 var(--pv-font-mono); color: var(--pv-coral); background: var(--pv-sage-tint); padding: 1px 5px; border-radius: 2px; }
+  .pp-prose ul { padding-left: 20px; margin: 0 0 16px; }
+  .pp-prose li { font-size: 16.5px; line-height: 1.66; color: var(--pv-ink-2); margin-bottom: 6px; }
+  .pp-prose li::marker { color: var(--pv-sage); }
+  .pp-prose blockquote { margin: 24px 0; }
+
+  .pp-side { position: sticky; top: 24px; display: flex; flex-direction: column; gap: 18px; }
+  .pp-side__box { background: var(--pv-paper); border: 1px solid var(--pv-line); border-radius: var(--pv-r-1); padding: 18px 20px; }
+  .pp-side__head { font: 400 11px/1 var(--pv-font-mono); text-transform: uppercase; letter-spacing: var(--pv-track-eyebrow); color: var(--pv-mute); margin-bottom: 12px; }
+
+  .pp-foot { margin-top: var(--pv-8); padding-top: var(--pv-5); border-top: 1px solid var(--pv-ink); display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 16px; font: 400 12px/1.4 var(--pv-font-mono); color: var(--pv-mute); }
+  .pp-foot a { color: var(--pv-ink-2); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<div class="pp">
+
+  <nav class="pp-nav">
+    <a href="Homepage.html" class="pp-nav__brand" style="text-decoration:none; color:inherit;">
+      <span class="glyph">pv</span>
+      <span class="name">patientvibes</span>
+    </a>
+    <div class="pp-nav__crumbs">
+      <a href="Homepage.html">index</a><span class="sep">/</span>harnesses<span class="sep">/</span><span style="color:var(--pv-ink);">kindle-pipeline</span>
+    </div>
+  </nav>
+
+  <header>
+    <div class="pp-head__eyebrow">H–01 · Harness · since 2026·02</div>
+    <h1 class="pp-head__title">agent-harness-<em>kindle-pipeline</em></h1>
+    <p class="pp-head__lede">An orchestrator that takes a source PDF and walks it through eight single-purpose tools, ending in a Kindle Scribe–ready PDF with annotation margins and a matching Obsidian export. Built so each stage stays inspectable.</p>
+
+    <div class="pp-meta-row">
+      <span class="pv-chip"><span class="pv-chip__dot pv-chip__dot--live"></span>dev</span>
+      <span class="pv-chip">composes · 8 tools</span>
+      <span class="pv-chip">tags · harness · kindle · ocr</span>
+      <span class="pv-chip">source · github.com/patientvibes</span>
+    </div>
+  </header>
+
+  <div class="pp-grid">
+    <article class="pp-prose">
+
+      <h2>What it does</h2>
+      <p>Subprocess-calls each <code>agent-tool-*</code> CLI in sequence per book listed in <code>books.json</code>. Source PDF → Marker OCR → figure scan → strip pipeline (back-matter, marker-artifacts, clean-markdown) → LLM proofread → book-builder PDF + Obsidian export.</p>
+
+      <p>The pipeline is boring on purpose. Each tool is a CLI that can run by hand. The harness just lines them up, threads outputs into inputs, and writes a manifest so I can rerun any single stage without redoing the rest.</p>
+
+      <h3>Pipeline</h3>
+      <div class="pv-card pv-card--soft" style="border-radius: var(--pv-r-3); padding: 18px 20px;">
+        <div class="pv-pipe" style="flex-wrap: wrap; row-gap: 10px;">
+          <div class="pv-pipe__node">ocr</div>
+          <div class="pv-pipe__arr">─→</div>
+          <div class="pv-pipe__node">figure-scan</div>
+          <div class="pv-pipe__arr">─→</div>
+          <div class="pv-pipe__node">strip</div>
+          <div class="pv-pipe__arr">─→</div>
+          <div class="pv-pipe__node">proofread</div>
+          <div class="pv-pipe__arr">─→</div>
+          <div class="pv-pipe__node">build</div>
+        </div>
+      </div>
+
+      <h2>A run, end to end</h2>
+      <p>Drop a PDF and a <code>books.json</code> entry. The harness writes everything into <code>./runs/&lt;timestamp&gt;/</code> — intermediates, logs, the final PDF + markdown.</p>
+
+      <div class="pv-terminal">
+        <div class="pv-terminal__bar">
+          <i class="r"></i><i class="y"></i><i class="g"></i>
+          <span class="pv-terminal__title">~/kindle-pipeline</span>
+        </div>
+        <div class="pv-terminal__body">
+          <div><span class="ps">$</span> kindle-pipeline run books.json</div>
+          <div class="dim">  marker-ocr · 412 pages <span class="ok">ok</span></div>
+          <div class="dim">  figure-scanner · 38 figures, 2 missing <span class="warn">!</span></div>
+          <div class="dim">  strip pipeline (3 stages)... <span class="ok">ok</span></div>
+          <div><span class="arrow">→</span> llm-proofreader · 14 fixes proposed, 12 accepted</div>
+          <div class="dim">  book-builder · scribe.pdf + obsidian.md</div>
+          <div><span class="ps">$</span> <span class="ok">done · 6m 12s · $0.84</span></div>
+        </div>
+      </div>
+
+      <h2>Why it's split this way</h2>
+      <p>Every stage that could be deterministic is a non-LLM CLI. Marker handles OCR; <code>strip-marker-artifacts</code>, <code>strip-back-matter</code>, and <code>clean-markdown</code> handle the predictable cleanup. The LLM only sees text that's already been combed.</p>
+      <p>The proofreader runs with a verifier subagent: every proposed fix is reviewed before it's applied, and a persistent memory of known false positives accumulates between runs. It's the slowest, most expensive stage by design — it earns it.</p>
+
+      <h2>Composes</h2>
+      <ul>
+        <li><code>agent-tool-scrape-sources</code> — optional ingest from the web</li>
+        <li><code>agent-tool-figure-scanner</code> — pre-flight figure/table audit</li>
+        <li><code>agent-tool-marker-cleanup</code> — three-stage strip pipeline</li>
+        <li><code>agent-tool-llm-proofreader</code> — verified fix proposals</li>
+        <li><code>agent-tool-prose-quality</code> — readability signals</li>
+        <li><code>agent-tool-book-builder</code> — final typeset PDF + Obsidian export</li>
+        <li><code>agent-tool-pdf-builder</code> — library, used by book-builder</li>
+      </ul>
+
+      <blockquote class="pv-quote">"The harness comes first. The model comes last."</blockquote>
+
+      <h2>What's next</h2>
+      <p>Second book through the pipeline. A pass on the figure scanner so missing references get reported in the final manifest instead of as warnings. And — eventually — a way to run the whole thing on a folder of books overnight.</p>
+
+    </article>
+
+    <aside class="pp-side">
+      <div class="pp-side__box">
+        <div class="pp-side__head">At a glance</div>
+        <dl class="pv-meta">
+          <dt>kind</dt><dd>harness</dd>
+          <dt>id</dt><dd>H–01</dd>
+          <dt>language</dt><dd>python</dd>
+          <dt>tools</dt><dd>8</dd>
+          <dt>status</dt><dd>dev</dd>
+          <dt>last run</dt><dd>2d ago</dd>
+          <dt>book #</dt><dd>1 of 2</dd>
+        </dl>
+      </div>
+      <div class="pp-side__box">
+        <div class="pp-side__head">Read next</div>
+        <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px;">
+          <li><a href="#" style="color:var(--pv-ink); text-decoration:none; font: 500 14px/1.4 var(--pv-font-sans);">agent-tool-llm-proofreader →</a><div class="pv-small">the slow, expensive stage.</div></li>
+          <li><a href="#" style="color:var(--pv-ink); text-decoration:none; font: 500 14px/1.4 var(--pv-font-sans);">on patient agents →</a><div class="pv-small">essay.</div></li>
+          <li><a href="#" style="color:var(--pv-ink); text-decoration:none; font: 500 14px/1.4 var(--pv-font-sans);">the harness essay →</a><div class="pv-small">why the harness comes first.</div></li>
+        </ul>
+      </div>
+      <div class="pp-side__box">
+        <div class="pp-side__head">Source</div>
+        <a href="https://agents.patientvibes.io" style="font: 400 13px/1.5 var(--pv-font-mono); color:var(--pv-sage); text-decoration:none;">github.com/patientvibes/<br/>agent-harness-kindle-pipeline ↗</a>
+      </div>
+    </aside>
+  </div>
+
+  <footer class="pp-foot">
+    <a href="Homepage.html">← back to index</a>
+    <span>© patientvibes · 2026 · set in instrument serif, inter, jetbrains mono</span>
+  </footer>
+
+</div>
+
+</body>
+</html>
