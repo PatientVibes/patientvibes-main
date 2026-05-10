@@ -1,0 +1,34 @@
+---
+import '../styles/fonts.css';
+import '../styles/tokens.css';
+import '../styles/base.css';
+import '../styles/components.css';
+
+interface Props {
+  title: string;
+  description?: string;
+  rss?: boolean;
+}
+const { title, description, rss = true } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{title}</title>
+  {description && <meta name="description" content={description} />}
+  <link rel="canonical" href={Astro.url.href} />
+  <link rel="icon" type="image/svg+xml" href="/brand/favicon.svg" />
+  <link rel="icon" type="image/svg+xml" href="/brand/favicon-dark.svg" media="(prefers-color-scheme: dark)" />
+
+  <!-- Above-the-fold font preloads: serif italic for hero accent, Inter 500 for nav/headings -->
+  <link rel="preload" href="/fonts/instrument-serif-400-italic.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/fonts/inter-500.woff2" as="font" type="font/woff2" crossorigin />
+
+  {rss && <link rel="alternate" type="application/rss+xml" title="patientvibes — notes" href="/index.xml" />}
+</head>
+<body>
+  <slot />
+</body>
+</html>
