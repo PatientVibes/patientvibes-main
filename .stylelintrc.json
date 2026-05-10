@@ -1,0 +1,15 @@
+{
+  "extends": ["stylelint-config-recommended"],
+  "rules": {
+    "color-no-hex": [true, {
+      "severity": "error",
+      "message": "Hex colors are not allowed outside src/styles/tokens.css. Use a var(--pv-*) token instead."
+    }]
+  },
+  "overrides": [
+    {
+      "files": ["src/styles/tokens.css"],
+      "rules": { "color-no-hex": null }
+    }
+  ]
+}
