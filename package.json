@@ -10,6 +10,7 @@
     "preview": "astro preview",
     "astro": "astro",
     "fetch-projects": "node scripts/fetch-projects.mjs",
+    "prebuild": "npm run fetch-projects",
     "lint": "stylelint \"src/**/*.css\"",
     "lint:fix": "stylelint --fix \"src/**/*.css\""
   },

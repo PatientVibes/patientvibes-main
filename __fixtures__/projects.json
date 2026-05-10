@@ -1,0 +1,106 @@
+{
+  "generatedAt": "2026-05-10T22:47:23.237Z",
+  "count": 10,
+  "projects": [
+    {
+      "id": "agent-harness-kindle-pipeline",
+      "kind": "harness",
+      "name": "agent-harness-kindle-pipeline",
+      "status": "dev",
+      "last_run": "2026-05-10T22:47:04.508Z",
+      "summary": "Orchestrator for the Kindle Scribe pipeline. Subprocess-calls each agent-tool-* CLI in sequence per book listed in `books.json`. Source PDF -> Marker OCR -> figure scan -> strip pipeline (back-matter, marker-artifacts, clean-markdown) -> LLM proofread -> book-builder PDF + Obsidian export.",
+      "url": "https://agents.patientvibes.io/tools/agent-harness-kindle-pipeline/",
+      "githubUrl": "https://github.com/PatientVibes/agent-harness-kindle-pipeline"
+    },
+    {
+      "id": "agent-skills",
+      "kind": "skill",
+      "name": "pr-review-tools",
+      "status": "dev",
+      "last_run": "2026-05-10T22:47:03.017Z",
+      "summary": "Chris Moore's personal Claude Code plugin marketplace.",
+      "url": "https://agents.patientvibes.io/tools/agent-skills/",
+      "githubUrl": "https://github.com/PatientVibes/agent-skills"
+    },
+    {
+      "id": "agent-tool-book-builder",
+      "kind": "tool",
+      "name": "agent-tool-book-builder",
+      "status": "dev",
+      "last_run": "2026-05-10T22:47:04.335Z",
+      "summary": "Renders Marker-OCR'd markdown into a typeset Kindle Scribe PDF (with annotation margins) plus an Obsidian-compatible markdown export. Handles chapters, images, blockquotes, figures.",
+      "url": "https://agents.patientvibes.io/tools/agent-tool-book-builder/",
+      "githubUrl": "https://github.com/PatientVibes/agent-tool-book-builder"
+    },
+    {
+      "id": "agent-tool-figure-scanner",
+      "kind": "tool",
+      "name": "agent-tool-figure-scanner",
+      "status": "dev",
+      "last_run": "2026-05-10T22:47:03.657Z",
+      "summary": "Scans source PDFs for figure / table / diagram references and produces a manifest of which were extracted and which are missing. Used by the kindle-pipeline harness as a pre-step before LLM proofreading.",
+      "url": "https://agents.patientvibes.io/tools/agent-tool-figure-scanner/",
+      "githubUrl": "https://github.com/PatientVibes/agent-tool-figure-scanner"
+    },
+    {
+      "id": "agent-tool-llm-proofreader",
+      "kind": "tool",
+      "name": "agent-tool-llm-proofreader",
+      "status": "dev",
+      "last_run": "2026-05-10T22:47:04.157Z",
+      "summary": "LLM-powered OCR proofreading agent. Deterministic pre-pass surfaces likely-issue regions; langchain-openai (via OpenRouter) verifies and proposes fixes; a separate verifier subagent reviews each fix before it's applied. Persistent memory of known false positives accumulates across runs in `~/.local/state/agent-tool-llm-proofreader/memory.json` (Linux/macOS) or `%LOCALAPPDATA%\\agent-tool-llm-proofreader\\memory.json` (Windows).",
+      "url": "https://agents.patientvibes.io/tools/agent-tool-llm-proofreader/",
+      "githubUrl": "https://github.com/PatientVibes/agent-tool-llm-proofreader"
+    },
+    {
+      "id": "agent-tool-marker-cleanup",
+      "kind": "tool",
+      "name": "agent-tool-marker-cleanup",
+      "status": "dev",
+      "last_run": "2026-05-10T22:47:03.490Z",
+      "summary": "Three deterministic CLIs for cleaning Marker OCR output before LLM proofreading. They run as a strip pipeline: `strip-marker-artifacts` → `strip-back-matter` → `clean-markdown`.",
+      "url": "https://agents.patientvibes.io/tools/agent-tool-marker-cleanup/",
+      "githubUrl": "https://github.com/PatientVibes/agent-tool-marker-cleanup"
+    },
+    {
+      "id": "agent-tool-pdf-builder",
+      "kind": "tool",
+      "name": "agent-tool-pdf-builder",
+      "status": "dev",
+      "last_run": "2026-05-10T22:47:03.321Z",
+      "summary": "Reportlab-based PDF builder library. Title pages, typography, margins, figure placeholders. Used as a library by `agent-tool-book-builder` (and as a smoke-test CLI for direct invocation).",
+      "url": "https://agents.patientvibes.io/tools/agent-tool-pdf-builder/",
+      "githubUrl": "https://github.com/PatientVibes/agent-tool-pdf-builder"
+    },
+    {
+      "id": "agent-tool-pr-reviewer",
+      "kind": "tool",
+      "name": "agent-tool-pr-reviewer",
+      "status": "dev",
+      "last_run": "2026-05-10T22:47:03.179Z",
+      "summary": "CLI that reviews the current git branch's diff against a base ref using a single Pydantic AI call. Emits a typed `findings.json` plus a human-readable `review-output.md` under `<repo>/.ai-review/runs/<timestamp>/`.",
+      "url": "https://agents.patientvibes.io/tools/agent-tool-pr-reviewer/",
+      "githubUrl": "https://github.com/PatientVibes/agent-tool-pr-reviewer"
+    },
+    {
+      "id": "agent-tool-prose-quality",
+      "kind": "tool",
+      "name": "agent-tool-prose-quality",
+      "status": "dev",
+      "last_run": "2026-05-10T22:47:03.816Z",
+      "summary": "Prose quality analyzer. Computes sentence-length stats, lexical density, and other readable signals over markdown / plain text.",
+      "url": "https://agents.patientvibes.io/tools/agent-tool-prose-quality/",
+      "githubUrl": "https://github.com/PatientVibes/agent-tool-prose-quality"
+    },
+    {
+      "id": "agent-tool-scrape-sources",
+      "kind": "tool",
+      "name": "agent-tool-scrape-sources",
+      "status": "dev",
+      "last_run": "2026-05-10T22:47:03.954Z",
+      "summary": "Fetches web essays / articles as clean markdown with YAML frontmatter (title, author, source URL, fetch date). Used by the kindle-pipeline harness as a source ingestion stage.",
+      "url": "https://agents.patientvibes.io/tools/agent-tool-scrape-sources/",
+      "githubUrl": "https://github.com/PatientVibes/agent-tool-scrape-sources"
+    }
+  ]
+}
