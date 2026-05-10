@@ -1,0 +1,14 @@
+---
+interface Props {
+  date: string;       // "2026 · 04 · 18"
+  title: string;      // may contain <em>...</em>
+  href: string;
+  readMin: number;
+}
+const { date, title, href, readMin } = Astro.props;
+---
+<a class="hp-note" href={href}>
+  <span class="hp-note__date">{date}</span>
+  <span class="hp-note__title" set:html={title} />
+  <span class="hp-note__read">{readMin} min</span>
+</a>

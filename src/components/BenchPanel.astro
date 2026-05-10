@@ -1,0 +1,23 @@
+---
+interface Props {
+  inFlightCount: number;
+  items: { state: 'shipped' | 'flight' | 'queued'; label: string; tag: string; when: string }[];
+}
+const { inFlightCount, items } = Astro.props;
+const stateClass = (s: 'shipped' | 'flight' | 'queued') => s === 'flight' ? '' : s;
+---
+<div class="hp-now__panel">
+  <div class="hp-now__panel-head">
+    <span>Bench · this week</span>
+    <span class="right"><i></i>{inFlightCount} in flight</span>
+  </div>
+  <ul class="hp-now__list">
+    {items.map(it => (
+      <li class={stateClass(it.state)}>
+        <span class="dot"></span>
+        <span class="label">{it.label} <em>· {it.tag}</em></span>
+        <span class="when" set:html={it.when} />
+      </li>
+    ))}
+  </ul>
+</div>

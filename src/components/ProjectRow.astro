@@ -1,0 +1,32 @@
+---
+interface Props {
+  id: string;            // "H–01", "T–02", etc.
+  href: string;          // destination (usually agents.patientvibes.io/tools/<slug>/)
+  name: string;          // "agent-tool-pr-reviewer"
+  description: string;
+  status: 'live' | 'build' | 'draft' | 'shipped';
+  statusLabel: string;   // "dev", "building", "drafting", "shipped"
+  meta?: { k: string; v: string }[];
+  date?: string;         // "2026 · 04"
+}
+const { id, href, name, description, status, statusLabel, meta = [], date } = Astro.props;
+const statusClass = `hp-proj__status hp-proj__status--${status}`;
+---
+<a class="hp-proj" href={href}>
+  <span class="hp-proj__id">{id}</span>
+  <div class="hp-proj__body">
+    <div class="hp-proj__head">
+      <span class="hp-proj__name">{name} <span class="hp-proj__arrow">→</span></span>
+      <span class={statusClass}><i></i>{statusLabel}</span>
+    </div>
+    <p class="hp-proj__desc" set:html={description} />
+    {meta.length > 0 && (
+      <div class="hp-proj__meta">
+        {meta.map(m => (
+          <span><span class="k">{m.k} ·</span> <span class="v">{m.v}</span></span>
+        ))}
+      </div>
+    )}
+  </div>
+  {date && <div class="hp-proj__date">{date}</div>}
+</a>
