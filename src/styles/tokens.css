@@ -18,9 +18,22 @@
   /* ── color · brand ── */
   --pv-sage:      #3F6B54;  /* signature accent — body contrast on --pv-bg ~4.8:1; reserve for ≥18px headings/links, not 16px body */
   --pv-sage-soft: #7fa68f;  /* hover / decorative */
+  --pv-sage-deep: #325641;  /* darker sage for hover on --pv-sage backgrounds */
   --pv-sage-tint: rgba(63,107,84,.08);
   --pv-lime:      #B8D147;  /* highlight on dark only */
   --pv-coral:     #D6764E;  /* danger / attention */
+
+  /* ── color · neutral primitives (use sparingly; prefer ink/paper tokens) ── */
+  --pv-black:     #000;
+  --pv-white:     #fff;
+
+  /* ── color · terminal (always-dark surface; not theme-driven) ── */
+  --pv-term-bg:        #0d1f17;
+  --pv-term-bar-bg:    #0a1a13;
+  --pv-term-fg:        #dfe7d8;
+  --pv-term-line:      #1f3a2c;
+  --pv-term-dot:       #2a4a3a;
+  --pv-term-dim:       #90a597;
 
   /* ── code syntax (light) ── */
   --pv-syn-keyword:  var(--pv-coral);

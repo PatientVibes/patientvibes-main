@@ -10,8 +10,8 @@
     "preview": "astro preview",
     "astro": "astro",
     "fetch-projects": "node scripts/fetch-projects.mjs",
-    "lint": "stylelint \"src/**/*.{css,astro}\"",
-    "lint:fix": "stylelint --fix \"src/**/*.{css,astro}\""
+    "lint": "stylelint \"src/**/*.css\"",
+    "lint:fix": "stylelint --fix \"src/**/*.css\""
   },
   "dependencies": {
     "@astrojs/rss": "^4.0.10",
