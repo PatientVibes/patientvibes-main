@@ -6,12 +6,6 @@ Done work isn't tracked here — see `git log` and [archive/plans/](archive/plan
 
 ---
 
-## Bugs · visible to visitors
-
-- [ ] **6 dead `href="#"` links on the homepage.** Three of four note rows and both workshop rows in [src/pages/index.astro](src/pages/index.astro) point at `#`. Either backfill real content (markdown files for notes; project sub-pages for workshop) or drop the placeholder rows. Minimum fix: delete the 3 fake notes so only the real one remains; mark the workshop entries as `status: 'draft'` with no link.
-- [ ] **Notes section is hardcoded, not wired to the content collection.** Task 12 created the `notes` collection at [src/content/notes/](src/content/notes/) with one seed entry (`2026-04-18-on-patient-agents.md`), but the homepage's `notes` array is still a hand-typed list of 4 placeholders. The RSS feed at [src/pages/index.xml.ts](src/pages/index.xml.ts) DOES read the collection — homepage should match. Replace the hardcoded array with `const notes = await getCollection('notes')`-style code (mirroring how `loadProjects` works in [src/lib/load-projects.ts](src/lib/load-projects.ts)).
-- [ ] **No per-note routed page.** `src/pages/notes/[slug].astro` doesn't exist, so even if a note's link were correct, there's no page to render it. Build a slug-routed page that uses `BaseLayout` and renders the markdown body. Once this lands, the homepage's NoteRow can use `/notes/${slug}` as the href.
-
 ## Plan items · deferred
 
 - [ ] **Task 15 — Kindle Scribe pipeline output photo** in the sibling `patientvibes-agents-site` repo. Was the only explicit deferral at the end of the 2026-05-10 redesign session.

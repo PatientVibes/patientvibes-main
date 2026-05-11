@@ -1,0 +1,90 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+export async function getStaticPaths() {
+  const notes = await getCollection('notes', e => !e.data.draft);
+  return notes.map(note => ({
+    params: { slug: note.id },
+    props: { note },
+  }));
+}
+
+const { note } = Astro.props;
+const { Content } = await render(note);
+
+const d = note.data.pubDate;
+const formattedDate = `${d.getUTCFullYear()} · ${String(d.getUTCMonth() + 1).padStart(2, '0')} · ${String(d.getUTCDate()).padStart(2, '0')}`;
+const titleHtml = note.data.title.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+const readMin = note.data.readMin ?? 5;
+---
+<BaseLayout title={`${note.data.title} — patientvibes`} description={note.data.summary}>
+  <div class="np">
+    <nav class="np-nav">
+      <a href="/" class="np-nav__back"><span aria-hidden="true">←</span> patientvibes</a>
+      <a href="/#notes" class="np-nav__index">Notes index</a>
+    </nav>
+
+    <article class="np-article">
+      <header class="np-head">
+        <div class="np-meta">
+          <span>{formattedDate}</span>
+          <span class="np-meta__dot" aria-hidden="true">·</span>
+          <span>{readMin} min</span>
+        </div>
+        <h1 class="np-title" set:html={titleHtml} />
+        <p class="np-summary">{note.data.summary}</p>
+      </header>
+      <div class="np-prose">
+        <Content />
+      </div>
+    </article>
+
+    <footer class="np-foot">
+      <a href="/#notes">← back to notes</a>
+    </footer>
+  </div>
+</BaseLayout>
+
+<style>
+  .np { max-width: 680px; margin: 0 auto; padding: var(--pv-6) var(--pv-6) var(--pv-9); }
+
+  .np-nav { display: flex; justify-content: space-between; align-items: center; padding: 8px 0 28px; border-bottom: 1px solid var(--pv-line); font: 400 11px/1 var(--pv-font-mono); text-transform: uppercase; letter-spacing: var(--pv-track-eyebrow); }
+  .np-nav a { color: var(--pv-ink-2); text-decoration: none; transition: color var(--pv-dur-1) var(--pv-ease); }
+  .np-nav a:hover { color: var(--pv-sage); }
+  .np-nav__back span { color: var(--pv-sage); }
+
+  .np-article { padding: var(--pv-8) 0 var(--pv-6); }
+
+  .np-head { margin-bottom: var(--pv-6); padding-bottom: var(--pv-5); border-bottom: 1px solid var(--pv-line); }
+  .np-meta { font: 400 11px/1 var(--pv-font-mono); text-transform: uppercase; letter-spacing: var(--pv-track-eyebrow); color: var(--pv-mute); display: flex; gap: 10px; align-items: center; margin-bottom: 20px; }
+  .np-meta__dot { color: var(--pv-line); }
+  .np-title { font-family: var(--pv-font-serif); font-weight: 400; font-size: clamp(36px, 5vw, 52px); line-height: 1.05; letter-spacing: var(--pv-track-tight); margin: 0 0 18px; }
+  .np-title :global(em) { font-style: italic; color: var(--pv-sage); }
+  .np-summary { font-family: var(--pv-font-serif); font-style: italic; font-size: 20px; line-height: 1.45; color: var(--pv-ink-2); margin: 0; max-width: 50ch; }
+
+  .np-prose { font-size: 17px; line-height: 1.7; color: var(--pv-ink); }
+  .np-prose :global(p) { margin: 0 0 1.2em; max-width: 62ch; }
+  .np-prose :global(p:last-child) { margin-bottom: 0; }
+  .np-prose :global(em) { font-style: italic; }
+  .np-prose :global(strong) { font-weight: 600; }
+  .np-prose :global(a) { color: var(--pv-sage); text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
+  .np-prose :global(h2) { font-family: var(--pv-font-serif); font-weight: 400; font-size: 28px; line-height: 1.2; letter-spacing: var(--pv-track-tight); margin: var(--pv-6) 0 var(--pv-3); }
+  .np-prose :global(h3) { font-family: var(--pv-font-serif); font-weight: 400; font-size: 22px; line-height: 1.25; letter-spacing: var(--pv-track-tight); margin: var(--pv-5) 0 var(--pv-2); }
+  .np-prose :global(blockquote) { border-left: 2px solid var(--pv-sage); padding-left: 18px; margin: var(--pv-4) 0; font-family: var(--pv-font-serif); font-style: italic; font-size: 19px; line-height: 1.45; color: var(--pv-ink-2); }
+  .np-prose :global(ul), .np-prose :global(ol) { margin: 0 0 1.2em; padding-left: 1.4em; max-width: 62ch; }
+  .np-prose :global(li) { margin-bottom: .4em; }
+  .np-prose :global(code) { font-family: var(--pv-font-mono); font-size: .9em; color: var(--pv-coral); background: var(--pv-paper); padding: 1px 5px; border-radius: var(--pv-r-1); }
+  .np-prose :global(pre) { background: var(--pv-paper); border: 1px solid var(--pv-line); border-radius: var(--pv-r-1); padding: 14px 16px; overflow-x: auto; margin: var(--pv-4) 0; font-size: 13.5px; line-height: 1.55; }
+  .np-prose :global(pre code) { background: transparent; padding: 0; color: var(--pv-ink); }
+  .np-prose :global(hr) { border: none; border-top: 1px solid var(--pv-line); margin: var(--pv-5) 0; }
+
+  .np-foot { margin-top: var(--pv-7); padding-top: var(--pv-4); border-top: 1px solid var(--pv-line); font: 400 12px/1 var(--pv-font-mono); text-transform: uppercase; letter-spacing: var(--pv-track-eyebrow); }
+  .np-foot a { color: var(--pv-ink-2); text-decoration: none; transition: color var(--pv-dur-1) var(--pv-ease); }
+  .np-foot a:hover { color: var(--pv-sage); }
+
+  @media (max-width: 720px) {
+    .np { padding: var(--pv-5) var(--pv-4) var(--pv-8); }
+    .np-prose { font-size: 16px; }
+  }
+</style>

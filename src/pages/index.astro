@@ -1,4 +1,5 @@
 ---
+import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ProjectRow from '../components/ProjectRow.astro';
 import NoteRow from '../components/NoteRow.astro';
@@ -34,10 +35,10 @@ const tools     = fromCatalog('tool');
 const skills    = fromCatalog('skill');
 
 // Workshop entries stay hardcoded — hardware projects aren't in the agents catalog.
+// No `href` — these are aspiration cards (TODO.md "Workshop entries are aspirational").
 const workshop = [
   {
     id: 'W–01',
-    href: '#',
     name: 'hotel <span class="v">/ esp32 door scanner</span>',
     status: 'build' as const,
     statusLabel: 'building',
@@ -50,7 +51,6 @@ const workshop = [
   },
   {
     id: 'W–02',
-    href: '#',
     name: 'desk parts <span class="v">/ small printed things</span>',
     status: 'draft' as const,
     statusLabel: 'drafting',
@@ -63,12 +63,20 @@ const workshop = [
   },
 ];
 
-const notes = [
-  { date: '2026 · 04 · 18', title: 'On <em>patient</em> agents — why I stopped optimizing for fast.', href: '#', readMin: 7 },
-  { date: '2026 · 04 · 02', title: 'The harness comes first. The model comes last.',                 href: '#', readMin: 5 },
-  { date: '2026 · 03 · 21', title: 'Tools should be <em>boring</em>, like good libraries.',          href: '#', readMin: 4 },
-  { date: '2026 · 02 · 09', title: 'A weekend with the ESP32 — notes for next time.',               href: '#', readMin: 6 },
-];
+// Notes are sourced from the content collection at src/content/notes/.
+// Title may contain `*emphasis*` markdown — converted to <em>...</em> for display.
+const noteEntries = await getCollection('notes', e => !e.data.draft);
+const notes = noteEntries
+  .sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime())
+  .map(e => {
+    const d = e.data.pubDate;
+    return {
+      date: `${d.getUTCFullYear()} · ${String(d.getUTCMonth() + 1).padStart(2, '0')} · ${String(d.getUTCDate()).padStart(2, '0')}`,
+      title: e.data.title.replace(/\*([^*]+)\*/g, '<em>$1</em>'),
+      href: `/notes/${e.id}/`,
+      readMin: e.data.readMin ?? 5,
+    };
+  });
 
 // Bench panel: most-recently-updated 5 from the catalog. status === 'dev' renders as
 // "in flight"; any other status renders as "shipped" with the year/month it pulled.

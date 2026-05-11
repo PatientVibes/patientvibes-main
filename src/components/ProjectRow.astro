@@ -1,7 +1,7 @@
 ---
 interface Props {
   id: string;            // "H–01", "T–02", etc.
-  href: string;          // destination (usually agents.patientvibes.io/tools/<slug>/)
+  href?: string;         // destination (usually agents.patientvibes.io/tools/<slug>/); omit for aspiration cards
   name: string;          // "agent-tool-pr-reviewer"
   description: string;
   status: 'live' | 'build' | 'draft' | 'shipped';
@@ -11,12 +11,13 @@ interface Props {
 }
 const { id, href, name, description, status, statusLabel, meta = [], date } = Astro.props;
 const statusClass = `hp-proj__status hp-proj__status--${status}`;
+const Tag = href ? 'a' : 'div';
 ---
-<a class="hp-proj" href={href}>
+<Tag class="hp-proj" href={href}>
   <span class="hp-proj__id">{id}</span>
   <div class="hp-proj__body">
     <div class="hp-proj__head">
-      <span class="hp-proj__name">{name} <span class="hp-proj__arrow">→</span></span>
+      <span class="hp-proj__name" set:html={href ? `${name} <span class="hp-proj__arrow">→</span>` : name} />
       <span class={statusClass}><i></i>{statusLabel}</span>
     </div>
     <p class="hp-proj__desc" set:html={description} />
@@ -29,4 +30,4 @@ const statusClass = `hp-proj__status hp-proj__status--${status}`;
     )}
   </div>
   {date && <div class="hp-proj__date">{date}</div>}
-</a>
+</Tag>
