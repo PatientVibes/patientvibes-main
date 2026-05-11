@@ -4,7 +4,7 @@ Guidance for Claude Code working in this repo. Read first before any non-trivial
 
 ## What this repo is
 
-Source for **[patientvibes.io](https://patientvibes.io)** — Chris Moore's portfolio for AI agent development & "vibe coding" consulting. Single static page (`index.html`, ~633 lines, ~21 KB) with all CSS/JS inlined. No build step.
+Source for **[patientvibes.io](https://patientvibes.io)** — Chris Moore's portfolio for AI agent development & "vibe coding" consulting. Astro 6 site in the "Sage Editorial" design language. Homepage at `src/pages/index.astro`; project rows and bench panel are bound at build time to the public catalog at [agents.patientvibes.io/api/projects.json](https://agents.patientvibes.io/api/projects.json).
 
 Repo: [`PatientVibes/patientvibes-main`](https://github.com/PatientVibes/patientvibes-main). Local clone: `D:/patientvibes-main/`.
 
@@ -18,7 +18,7 @@ Repo: [`PatientVibes/patientvibes-main`](https://github.com/PatientVibes/patient
 
 ## Deploy
 
-- **Hosting:** Cloudflare Pages, project name `patientvibes-main`. Production branch: `main`. Build command: empty. Output dir: empty (root). Auto-deploys on push to `main`.
+- **Hosting:** Cloudflare Pages, project name `patientvibes-main`. Production branch: `main`. Build command: `npm run build`. Output dir: `dist`. `NODE_VERSION=22.12` env var set for both production and preview. Auto-deploys on push to `main` via the "Cloudflare Workers and Pages" GitHub App (must be installed on the `PatientVibes` GitHub account — see the lessons section for why this matters). The webhook fires `deployment_trigger.type: github:push`; if a recent deploy shows `ad_hoc` for a normal commit-driven build, the App grant has been removed.
 - **DNS:** `patientvibes.io` is a CNAME (proxied) → `patientvibes-main.pages.dev` in zone `patientvibes.io`. Cloudflare auto-manages TLS.
 - **Subdomains in the same zone:** `agents.patientvibes.io` (separate Pages project — see below), `plaza.patientvibes.io`, `nextcloud.patientvibes.io`, `paperless.patientvibes.io`, `stirling.patientvibes.io`, `pokemon.patientvibes.io`. Don't touch their CNAMEs.
 - **History:** This project was a Cloudflare Pages "direct upload" project from 2025-08-05 to 2026-05-10. Last deploy before recreation was 2025-08-06 (commit `1ef38e5a`); the live site was 9 months stale relative to this repo until 2026-05-10. On 2026-05-10 the project was recreated as a git-connected Pages project (Cloudflare returns error 8000069 on PATCH for direct-upload sources, so the only path was delete + recreate, with the custom domain detached/re-attached around the recreation).
@@ -71,7 +71,7 @@ Tokens are vendored into both repos (`src/styles/tokens.css` in each). When you 
 
 | Site | Repo | Stack | Hosting |
 |---|---|---|---|
-| **patientvibes.io** | `patientvibes-main` (this repo) | Plain HTML | Cloudflare Pages (git-connected) |
+| **patientvibes.io** | `patientvibes-main` (this repo) | Astro 6 (Sage Editorial design system, no Tailwind) | Cloudflare Pages (git-connected) |
 | **agents.patientvibes.io** | [`patientvibes-agents-site`](https://github.com/PatientVibes/patientvibes-agents-site) | Astro 6 + Tailwind 4 (`@tailwindcss/vite`) + content collections | Cloudflare Pages (git-connected) |
 | **chrispaulmoore.com** | [`chrispaulmoore-website`](https://github.com/PatientVibes/chrispaulmoore-website) | Plain HTML + Cloudflare Worker (`comments-system`) | GitHub Pages (apex), Worker (comments subdomain) |
 
@@ -143,9 +143,9 @@ git push origin main
 curl -fsS https://patientvibes.io | head -1   # should reflect change
 ```
 
-**Add a new section** (5 minutes): edit the `<nav class="nav-links">` block to add an `<a href="#new">`, then add `<section id="new" class="section section-white">...</section>` near the existing sections (~line 433+). Match the existing class patterns.
+**Add a new section to the homepage** (5 minutes): edit `src/pages/index.astro`. Add an `<a href="#new">` inside the `<nav class="hp-nav__meta">` block, then add a new `<section id="new" class="hp-sec">...</section>` near the existing sections. Match the existing `.hp-sec` / `.hp-sec__head` / `.hp-sec__title` / `.hp-sec__num` patterns and increment the section number prefix (`01 · Harnesses` → `02 · Tools` → etc.). Page-local CSS lives in the `<style is:global>` block at the bottom of the same file.
 
-**Refresh the agents-subdomain link in the nav**: search for `agents.patientvibes.io` in `index.html` (currently line in `nav-links` block). Update the URL there if the subdomain ever changes.
+**Refresh the agents-subdomain link in the nav**: search for `agents.patientvibes.io` in `src/pages/index.astro` (it appears in `.hp-nav__meta` and in the hero intro paragraph). Update both if the subdomain ever changes.
 
 **Roll back a deploy**: in the Cloudflare Pages dashboard, Deployments tab → pick a previous deployment → "Retry deployment" or "Roll back to this deployment". Or push a revert commit (preferred — keeps git as source of truth).
 
@@ -155,8 +155,11 @@ curl -fsS https://patientvibes.io | head -1   # should reflect change
 - Site serves but content is stale: the CDN cache for `patientvibes.io` is set to `Cache-Control: public, max-age=0, must-revalidate` so it shouldn't cache. Force-fresh fetch: `curl -H "Cache-Control: no-cache" https://patientvibes.io/?nocache=$(date +%s)`.
 - DNS not resolving: check `https://api.cloudflare.com/client/v4/zones/33537d91eac78d628268ece5c6d8e5d0/dns_records?name=patientvibes.io` (with auth). The CNAME id at time of writing is `fe228e53c6549c7225328bc0da773709` and content `patientvibes-main.pages.dev`.
 
-## Lessons captured (2026-05-10 recreation)
+## Lessons captured (2026-05-10 redesign + CF migration)
 
 - **Cloudflare can't convert direct-upload Pages projects to git-connected.** `PATCH /pages/projects/<name>` with a `source` field returns error 8000069 ("You cannot update the `source` object in a Direct Uploads project"). Delete + recreate is the only path. Detach the custom domain first (`DELETE /domains/<name>`), then delete the project, then create the new project with `source: {type: github, ...}`, then re-attach the custom domain.
 - **Cloudflare's "Pages: Edit" permission template is misleading.** It doesn't include the `POST /pages/projects` (create) endpoint and seems not to cover deployment-trigger reliably. For a script that needs to create projects or trigger deployments, use a token with `Account: Account Settings: Edit` + `Account: Cloudflare Pages: Edit` together (or fall back to a broad token with caveats).
 - **`PatientVibes` is a GitHub user, not an org.** All API calls that take an "owner" parameter must use the `/users/{owner}/repos` endpoint shape; `/orgs/{owner}/...` 404s.
+- **A new CF Pages project created via API does NOT inherit `build_command` / `destination_dir` / `env_vars` from any previous project of the same name.** Defaults are empty. If the source repo needs a build step (Astro, Next, etc.), set them explicitly via `PATCH /pages/projects/<name>` right after creation — otherwise the first deploy succeeds at "build" and "deploy" stages but serves the repo root (no `index.html` → 404). Required minimum for this repo: `build_command="npm run build"`, `destination_dir="dist"`, `deployment_configs.{production,preview}.env_vars.NODE_VERSION=22.12`.
+- **CF Pages "git-connected" status is not the same as "the webhook is working".** The API will accept `source.type: github` + `deployments_enabled: true` regardless of whether the "Cloudflare Workers and Pages" GitHub App is actually installed on the target account. The project will *look* git-connected in `GET /pages/projects/<name>` but pushes will not auto-deploy. Test: push a trivial commit and check `deployment_trigger.type` on the resulting deploy via `GET /pages/projects/<name>/deployments?per_page=1`. `github:push` = healthy. `ad_hoc` (for a commit you just pushed) = the App grant is missing — go to https://github.com/apps/cloudflare-workers-and-pages and grant repo access for `PatientVibes`.
+- **Astro's scoped `<style>` blocks don't reach into imported components.** If a page-local CSS selector targets an element rendered by a child component (e.g. the homepage's `.hp-proj` / `.hp-note` / `.hp-now__list` classes target elements emitted by `ProjectRow.astro` / `NoteRow.astro` / `BenchPanel.astro`), the page's `<style>` block must be marked `is:global` or every component's elements get a different `data-astro-cid-*` scope hash and the selectors silently no-op. The build does NOT warn about this. Visible symptom: the page renders structurally but every project row is unstyled (default underlined link stack).
