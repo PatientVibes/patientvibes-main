@@ -4,50 +4,36 @@ import ProjectRow from '../components/ProjectRow.astro';
 import NoteRow from '../components/NoteRow.astro';
 import BenchPanel from '../components/BenchPanel.astro';
 import Terminal from '../components/Terminal.astro';
+import { loadProjects, byKind, displayStatus, formatYearMonth, shortId, type Project } from '../lib/load-projects';
 
+// Render markdown-style `inline code` from catalog summaries as coral pv-mono spans.
 const codeStyle = 'color:var(--pv-coral);font-size:13px;';
-const code = (s: string) => `<code class="pv-mono" style="${codeStyle}">${s}</code>`;
+const renderDesc = (s: string) =>
+  s.replace(/`([^`]+)`/g, (_, code) => `<code class="pv-mono" style="${codeStyle}">${code}</code>`);
 
-const harnesses = [
-  {
-    id: 'H–01',
-    href: 'https://agents.patientvibes.io',
-    name: 'agent-harness-kindle-pipeline',
-    status: 'live' as const,
-    statusLabel: 'dev',
-    description: `Orchestrator for the Kindle Scribe pipeline. Subprocess-calls each ${code('agent-tool-*')} CLI in sequence per book listed in ${code('books.json')}. Source PDF → Marker OCR → figure scan → strip pipeline → LLM proofread → book-builder PDF + Obsidian export.`,
-    meta: [
-      { k: 'composes', v: '8 tools' },
-      { k: 'tags', v: 'harness · kindle · ocr' },
-    ],
-    date: '2026 · 04',
-  },
-];
+const catalog = await loadProjects();
+const allProjects = catalog.projects;
 
-const tools = [
-  { id: 'T–01', name: 'agent-tool-book-builder',     date: '2026 · 04', tags: 'tool · kindle',     description: `Renders Marker-OCR'd markdown into a typeset Kindle Scribe PDF (with annotation margins) plus an Obsidian-compatible markdown export. Handles chapters, images, blockquotes, figures.` },
-  { id: 'T–02', name: 'agent-tool-llm-proofreader',  date: '2026 · 04', tags: 'tool · ocr · agent', description: `LLM-powered OCR proofreading agent. A deterministic pre-pass surfaces likely-issue regions; a verifier subagent reviews each fix before it's applied. Persistent memory of known false positives accumulates across runs.` },
-  { id: 'T–03', name: 'agent-tool-marker-cleanup',   date: '2026 · 03', tags: 'tool · ocr',         description: `Three deterministic CLIs for cleaning Marker OCR output before LLM proofreading. They run as a strip pipeline: ${code('strip-marker-artifacts')} → ${code('strip-back-matter')} → ${code('clean-markdown')}.` },
-  { id: 'T–04', name: 'agent-tool-figure-scanner',   date: '2026 · 03', tags: 'tool · ocr',         description: `Scans source PDFs for figure / table / diagram references and produces a manifest of which were extracted and which are missing. Used by the kindle-pipeline harness as a pre-step before LLM proofreading.` },
-  { id: 'T–05', name: 'agent-tool-pdf-builder',      date: '2026 · 03', tags: 'tool · pdf',         description: `Reportlab-based PDF builder library. Title pages, typography, margins, figure placeholders. Used as a library by ${code('agent-tool-book-builder')} (and as a smoke-test CLI for direct invocation).` },
-  { id: 'T–06', name: 'agent-tool-pr-reviewer',      date: '2026 · 02', tags: 'tool · pr-review',   description: `CLI that reviews the current git branch's diff against a base ref using a single Pydantic AI call. Emits a typed ${code('findings.json')} plus a human-readable ${code('review-output.md')}.` },
-  { id: 'T–07', name: 'agent-tool-prose-quality',    date: '2026 · 02', tags: 'tool · prose',       description: `Prose quality analyzer. Computes sentence-length stats, lexical density, and other readable signals over markdown / plain text.` },
-  { id: 'T–08', name: 'agent-tool-scrape-sources',   date: '2026 · 01', tags: 'tool · ingest',      description: `Fetches web essays and articles as clean markdown with YAML frontmatter (title, author, source URL, fetch date). Used by the kindle-pipeline harness as a source ingestion stage.` },
-];
+const fromCatalog = (kind: Project['kind']) =>
+  byKind(allProjects, kind).map((p, i) => {
+    const ds = displayStatus(p.status);
+    return {
+      id: shortId(kind, i + 1),
+      href: p.url,
+      name: p.name,
+      description: renderDesc(p.summary),
+      status: ds.state,
+      statusLabel: ds.label,
+      meta: [],
+      date: formatYearMonth(p.last_run),
+    };
+  });
 
-const skills = [
-  {
-    id: 'S–01',
-    href: 'https://agents.patientvibes.io',
-    name: 'pr-review-tools',
-    status: 'live' as const,
-    statusLabel: 'dev',
-    description: `My personal Claude Code plugin marketplace — skills I keep reaching for during code review, packaged so they travel.`,
-    meta: [{ k: 'tags', v: 'skill · pr-review' }],
-    date: '2026 · 02',
-  },
-];
+const harnesses = fromCatalog('harness');
+const tools     = fromCatalog('tool');
+const skills    = fromCatalog('skill');
 
+// Workshop entries stay hardcoded — hardware projects aren't in the agents catalog.
 const workshop = [
   {
     id: 'W–01',
@@ -84,13 +70,16 @@ const notes = [
   { date: '2026 · 02 · 09', title: 'A weekend with the ESP32 — notes for next time.',               href: '#', readMin: 6 },
 ];
 
-const benchItems = [
-  { state: 'shipped' as const, label: 'agents.patientvibes.io · v1 catalog', tag: 'site',    when: 'today' },
-  { state: 'flight'  as const, label: 'llm-proofreader · false-positive memory', tag: 'tool', when: 'in&nbsp;flight' },
-  { state: 'flight'  as const, label: 'kindle-pipeline · second book',         tag: 'harness', when: 'in&nbsp;flight' },
-  { state: 'queued'  as const, label: 'hotel · multi-card support',            tag: 'esp32',   when: 'queued' },
-  { state: 'queued'  as const, label: 'desk parts · cable comb v2',            tag: '3d-print', when: 'queued' },
-];
+// Bench panel: most-recently-updated 5 from the catalog. status === 'dev' renders as
+// "in flight"; any other status renders as "shipped" with the year/month it pulled.
+const recent = [...allProjects].sort((a, b) => b.last_run.localeCompare(a.last_run)).slice(0, 5);
+const benchItems = recent.map(p => ({
+  state: (p.status === 'dev' ? 'flight' : 'shipped') as 'flight' | 'shipped' | 'queued',
+  label: p.name,
+  tag: p.kind,
+  when: p.status === 'dev' ? 'in&nbsp;flight' : formatYearMonth(p.last_run),
+}));
+const inFlightCount = benchItems.filter(i => i.state === 'flight').length;
 
 const tags = [
   { name: 'tool', n: 8 },
@@ -166,18 +155,7 @@ const tags = [
       </div>
       <span class="hp-sec__count">{String(tools.length).padStart(2, '0')} entries</span>
     </div>
-    {tools.map(t => (
-      <ProjectRow
-        id={t.id}
-        href="https://agents.patientvibes.io"
-        name={t.name}
-        description={t.description}
-        status="live"
-        statusLabel="dev"
-        meta={[{ k: 'tags', v: t.tags }]}
-        date={t.date}
-      />
-    ))}
+    {tools.map(p => <ProjectRow {...p} />)}
   </section>
 
   <!-- ── Skills ── -->
@@ -231,7 +209,10 @@ const tags = [
         <p class="hp-now__quote">"Building slowly is the only way I know how to build things I keep using."</p>
         <p class="hp-now__sub">Right now I'm cleaning up the harness write-up, running triage in production against my own inbox, and trying to teach the ESP32 to recognize three different cards before it pretends to be a butler.</p>
       </div>
-      <BenchPanel inFlightCount={benchItems.filter(i => i.state === 'flight').length} items={benchItems} />
+      {benchItems.length > 0
+        ? <BenchPanel inFlightCount={inFlightCount} items={benchItems} />
+        : <p class="hp-now__sub" style="margin-top: 0;"><span class="pv-mono" style="text-transform: uppercase; letter-spacing: var(--pv-track-eyebrow); color: var(--pv-mute);">currently · </span>kindle-pipeline · book #2.</p>
+      }
     </div>
 
     <div class="hp-term-wrap">
