@@ -1,112 +1,49 @@
-# PatientVibes.io - AI Agent Development Portfolio
+# patientvibes-main
 
-Professional portfolio website showcasing AI agent development expertise, intelligent automation solutions, and innovative vibe coding approaches.
+Source for **[patientvibes.io](https://patientvibes.io)** — Chris Moore's portfolio for AI agent development and "vibe coding" consulting.
 
-## 🚀 Features
+A single Astro 6 page in the "Sage Editorial" design language: Instrument Serif + Inter + JetBrains Mono on a sage-and-paper palette, no Tailwind, all tokens. Project rows are bound at build time to the public catalog at [agents.patientvibes.io/api/projects.json](https://agents.patientvibes.io/api/projects.json) — push a README to one of the `agent-*` sibling repos and it propagates here next build.
 
-- **Modern Design**: Clean, professional portfolio with gradient aesthetics
-- **AI Agent Focus**: Highlights expertise in intelligent automation and AI systems
-- **Portfolio Showcase**: Features the property survey GIS platform as flagship project
-- **Responsive Design**: Optimized for all devices and screen sizes
-- **Performance Optimized**: Deployed on Cloudflare Pages for global edge performance
+## Local dev
 
-## 🎯 Sections
-
-### Hero Section
-- Compelling headline: "AI Agent Development & Vibe Coding"
-- Clear value proposition and call-to-action
-- Professional gradient design
-
-### Expertise Showcase
-- AI Agent Development
-- Intelligent Automation  
-- Vibe Coding Innovation
-- GIS & Spatial Analysis
-- Cloud Architecture
-- Data Intelligence
-
-### Featured Portfolio
-- **Property Survey GIS Platform**: Comprehensive property analysis with:
-  - ±3 feet survey accuracy
-  - Multi-layer city data integration
-  - Interactive drill-down functionality
-  - Professional ALTA/NSPS compliant reports
-  - Cloudflare edge computing architecture
-
-### Development Approach
-1. **Understand & Analyze** - Deep workflow analysis
-2. **Design AI Strategy** - Intelligent system architecture
-3. **Vibe-Driven Development** - Innovative problem-solving
-4. **Deploy & Scale** - Modern cloud infrastructure
-
-## 🌐 Live Website
-
-**Main Portfolio**: https://patientvibes.io
-**Property Platform**: https://property.patientvibes.io
-
-## 🛠️ Technology Stack
-
-- **Frontend**: HTML5, CSS3, Vanilla JavaScript
-- **Hosting**: Cloudflare Pages
-- **Performance**: Global CDN, edge computing
-- **Design**: Modern gradient aesthetics, glass morphism
-- **Analytics**: Integrated event tracking
-
-## 📊 Performance Features
-
-- Lightning-fast loading with Cloudflare CDN
-- Mobile-optimized responsive design
-- Smooth scrolling and hover animations
-- Professional typography and spacing
-- SEO optimized with meta tags
-
-## 🎨 Design Philosophy
-
-The website embodies the "vibe coding" approach - combining:
-- Intuitive, human-centered design
-- Cutting-edge technology integration
-- Professional aesthetics with personality
-- Clear communication of complex concepts
-
-## 📈 Portfolio Projects
-
-### 1. Property Survey GIS Platform
-- **Technology**: QGIS, Python, Leaflet.js, Cloudflare Workers/Pages, R2 Storage
-- **Features**: Survey-grade accuracy, city data integration, interactive mapping
-- **Achievement**: Professional-grade property analysis with ±3 feet precision
-
-### Future Projects
-- Additional AI agent implementations
-- Automation solution case studies
-- Innovative development showcases
-
-## 🚀 Deployment
-
-### Cloudflare Pages Configuration
-- **Project Name**: patientvibes-main
-- **Domain**: patientvibes.io
-- **Build Command**: None (static HTML)
-- **Output Directory**: `/` (root)
-- **Framework Preset**: None
-
-### Local Development
 ```bash
-# Clone the repository
-git clone https://github.com/PatientVibes/patientvibes-main.git
-cd patientvibes-main
-
-# Open in browser (no build process required)
-open index.html
+npm install
+npm run dev      # http://localhost:4321
+npm run build    # writes dist/
+npm run preview  # serves dist/
+npm run lint     # stylelint over src/**/*.css
 ```
 
-### Deployment Process
-1. Push changes to GitHub main branch
-2. Cloudflare Pages automatically deploys
-3. Changes live at patientvibes.io within minutes
+`npm run build` runs `prebuild` first — fetches `https://agents.patientvibes.io/api/projects.json` into `.cache/projects.json`, falls back to `__fixtures__/projects.json` if the sibling site is unreachable. Node ≥22.12.
 
-### Environment Variables
-None required - pure static HTML/CSS/JS site
+## Layout
 
----
+```
+src/
+├── layouts/BaseLayout.astro    # head, fonts preload, favicon, RSS link
+├── pages/
+│   ├── index.astro             # the homepage
+│   └── index.xml.ts            # RSS endpoint via @astrojs/rss
+├── components/                 # ProjectRow, NoteRow, BenchPanel, Terminal
+├── content/notes/              # markdown notes (Zod-validated frontmatter)
+├── styles/                     # tokens.css · base.css · components.css · fonts.css
+└── lib/load-projects.ts        # reads .cache/projects.json
+public/
+├── brand/                      # favicons
+└── fonts/                      # 7 self-hosted woff2 (latin subset)
+scripts/fetch-projects.mjs      # the prebuild fetcher
+__fixtures__/projects.json      # offline fallback for builds
+archive/                        # old gradient index + mockups, kept for reference
+```
 
-**PatientVibes.io** - Transforming Complex Workflows with Intelligent Automation
+## Design tokens are the schema
+
+All colors live in [`src/styles/tokens.css`](src/styles/tokens.css) as `--pv-*` custom properties. Everywhere else uses `var(--pv-*)`. `stylelint` enforces this — `color-no-hex` is on for `src/**/*.css` except `tokens.css`. Adding a color = adding a token first.
+
+## Deploy
+
+Cloudflare Pages project `patientvibes-main`, git-connected to this repo's `main` branch. Push to `main` is the deploy trigger (when the GitHub App webhook is healthy — see [CLAUDE.md](CLAUDE.md) for the manual-trigger fallback). Build command is `npm run build`, output is `dist/`.
+
+## More
+
+See [`CLAUDE.md`](CLAUDE.md) for the full operational guide: the cross-site contract, the 1Password vault layout, the Cloudflare account context, common ops, and what to watch out for.

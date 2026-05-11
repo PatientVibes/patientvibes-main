@@ -10,11 +10,11 @@ Repo: [`PatientVibes/patientvibes-main`](https://github.com/PatientVibes/patient
 
 ## Stack
 
-- **Plain HTML** — no framework, no build, no bundler. CSS and JS are inlined in `<style>` / `<script>` blocks inside `index.html`.
-- **No package.json**, no `node_modules`. Local "preview" is `start index.html` (Windows) or any browser.
-- **Self-contained.** Edit `index.html`, push, deploy.
-
-This is *not* Astro and not the same stack as the related sites — see "Related sites" below.
+- **Astro 6** — matches the sibling `patientvibes-agents-site` stack. Build: `npm run build`. Output: `dist/`.
+- **No Tailwind here.** The "Sage Editorial" design system lives in `src/styles/` (`tokens.css`, `base.css`, `components.css`) — vendored verbatim into `patientvibes-agents-site` for consistency.
+- **Self-hosted fonts** in `public/fonts/` (Instrument Serif, Inter, JetBrains Mono — woff2, latin subset, font-display: swap). No Google Fonts CDN.
+- **Tokens are the schema.** `stylelint` enforces `color-no-hex` outside `src/styles/tokens.css` — PRs that introduce a one-off hex fail lint. Run: `npm run lint`.
+- **Node ≥22.12.** `package-lock.json` is committed; Cloudflare Pages uses `npm ci`.
 
 ## Deploy
 
@@ -34,19 +34,38 @@ curl -fsS -H "Authorization: Bearer $CF_API_TOKEN" \
 
 ```bash
 cd D:/patientvibes-main
-start index.html      # Windows; opens in default browser
-# or
-python -m http.server 8000  # then http://localhost:8000
+npm install     # first time only
+npm run dev     # http://localhost:4321
+npm run build   # writes dist/
+npm run preview # serves dist/ on http://localhost:4321
+npm run lint    # stylelint over src/**/*.css
 ```
 
-The site has no JS-driven routing, no API calls. What you see on disk is what serves.
+`npm run build` runs `prebuild` first (fetches `https://agents.patientvibes.io/api/projects.json` into `.cache/projects.json`, falls back to `__fixtures__/projects.json` on network failure). The fixture is committed as the safety net.
 
 ## Editing conventions
 
-- **One file.** All edits go in `index.html`. CSS in the `<style>` block (top of `<head>`), JS in inline `<script>` tags.
-- **Sections are anchor-routed.** The nav uses `#about`, `#skills`, `#portfolio`, `#approach`, `#contact` anchors plus an external `https://agents.patientvibes.io` link. Add new sections by adding a `<section id="...">` and a corresponding nav `<a href="#...">`.
-- **Mobile responsive.** Existing media queries hide `.nav-links` and adjust layout below ~768px. Test mobile when changing layout.
-- **No external CSS/JS dependencies in v1.** Adding any (e.g., a fonts CDN, an analytics tag) is a meaningful change worth committing on its own with the rationale.
+- **Pages live in `src/pages/`.** `index.astro` is the homepage; `index.xml.ts` is the RSS endpoint. Routed pages get one file each.
+- **Shared chrome lives in `src/layouts/BaseLayout.astro`** (font preloads, favicon, RSS autodiscovery, `<head>` boilerplate).
+- **Components in `src/components/`** — `ProjectRow.astro`, `NoteRow.astro`, `BenchPanel.astro`, `Terminal.astro`. Page-local CSS for the homepage stays inline in `index.astro`'s `<style>` block (`.hp-*` classes); design-system styles are global (`.pv-*` classes from `src/styles/`).
+- **Notes are markdown** in `src/content/notes/*.md` with Zod-validated frontmatter (title, pubDate, summary, readMin, draft). Schema in `src/content.config.ts`. RSS at `/index.xml` reads from this collection.
+- **Tokens are the schema.** Add a new color? It goes in `src/styles/tokens.css` first, then everything else uses `var(--pv-*)`. The `color-no-hex` lint rule allowlists only `tokens.css`.
+- **Mobile responsive.** The homepage uses media queries below 720px (collapses hero/now to single column, drops project date column). Test mobile when changing layout.
+
+## Cross-site contract
+
+The homepage's project rows + bench panel are bound at build time to `https://agents.patientvibes.io/api/projects.json`. The catalog manifest of record lives in `patientvibes-agents-site/scripts/lib/manifest.mjs`.
+
+To add a project to the homepage:
+1. Add the repo entry to `patientvibes-agents-site/scripts/lib/manifest.mjs`
+2. Push agents-site (Cloudflare Pages rebuilds; `pull-readmes` runs and the new tool gets a content collection entry; `/api/projects.json` reflects it within ~30s)
+3. Push patientvibes-main (next build's `prebuild` hook fetches the updated JSON; homepage rebuilds)
+
+Cache: 5-min edge cache on `/api/projects.json` (`s-maxage=300`). README edits propagate the same day. CORS is open (`*`) — public catalog data.
+
+Fallback: if the build can't reach the endpoint, it uses `__fixtures__/projects.json` (committed) so a brief sibling-site outage doesn't break a deploy. The fixture should be refreshed periodically — `curl -fsS https://agents.patientvibes.io/api/projects.json > __fixtures__/projects.json && git add __fixtures__/projects.json` when convenient.
+
+Tokens are vendored into both repos (`src/styles/tokens.css` in each). When you bump a token, edit both files in lockstep — there's no shared package.
 
 ## Related sites and repos
 
@@ -104,22 +123,23 @@ CF_API_TOKEN=$(op read "op://jkpi6kbttqrirancazuclw2tna/3vlhufs6givjkmkbtms4drjc
 
 ## Things to be careful about
 
-1. **The push triggers an immediate production deploy.** No staging branch, no PR-based preview gate. Run the change locally first; sanity-check that the `index.html` opens cleanly in a browser before pushing.
-2. **CSS/JS is inlined.** Don't reach for an external `<link rel="stylesheet">` or `<script src>` without explicit reason — keeps the deploy single-artifact and breaks-once means breaks-totally.
+1. **The push triggers an immediate Cloudflare Pages BUILD (not a static upload).** No staging branch, no PR-based preview gate. Run `npm run build` locally first; preview with `npm run preview` and click through. Build pulls live data from `agents.patientvibes.io/api/projects.json` — verify the sibling site is up before pushing if you've made changes that depend on the latest catalog data.
+2. **No external font CDNs.** Fonts are self-hosted in `public/fonts/` (Instrument Serif, Inter, JetBrains Mono). Don't reach for Google Fonts or any third-party stylesheet without explicit reason — adds a DNS round-trip and a privacy footprint, and breaks the "self-contained build" property.
 3. **The nav link to `agents.patientvibes.io` is load-bearing for cross-site discoverability.** If you renumber sections or restructure the nav, keep the link pointing at the agents subdomain.
-4. **Don't move this site under a build framework casually.** It's been single-file static HTML since inception; switching to Astro/Next/etc. is a real migration that needs a spec — and the Cloudflare Pages project's build command would need to be updated to match. The user's build pattern for catalogs lives in `patientvibes-agents-site` (Astro); this repo stays plain.
+4. **Both repos vendor the design system.** `src/styles/tokens.css`, `base.css`, `components.css` are duplicated in `patientvibes-main` and `patientvibes-agents-site`. There's no shared npm package — by design, since this is a 2-repo personal portfolio. Token bumps require a coordinated PR in both repos. If you find drift, the canonical source is whichever was edited most recently — check git log on both.
 
 ## Common operations
 
-**Edit and deploy a copy change** (1 minute):
+**Edit and deploy a copy change** (2 minutes):
 
 ```bash
 cd D:/patientvibes-main
-# edit index.html
-git add index.html
+# edit src/pages/index.astro (or src/components/*.astro)
+npm run build && npm run preview   # sanity-check at http://localhost:4321
+git add -A
 git commit -m "feat: <what changed>"
 git push origin main
-# wait ~30s, then:
+# wait ~60-90s for Cloudflare Pages build, then:
 curl -fsS https://patientvibes.io | head -1   # should reflect change
 ```
 
