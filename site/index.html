@@ -127,7 +127,7 @@ function showCity(feature) {
   const cityArea = turf.area(feature), cb = turf.bbox(feature);
   let kept = [];
   const pre = overlaps[feature.properties.GEOID];
-  if (pre) kept = pre.map(([code, share]) => ({ d: distByCode.get(code), share })).filter(r => r.d);
+  if (pre) kept = pre.map(([code, share, sqmi]) => ({ d: distByCode.get(code), share, sqmi })).filter(r => r.d);
   else districtFC.features.forEach(d => {
     const db = turf.bbox(d);
     if (db[0] > cb[2] || db[2] < cb[0] || db[1] > cb[3] || db[3] < cb[1]) return;
@@ -147,11 +147,13 @@ function showCity(feature) {
     '<p>' + kept.length + ' school district' + (kept.length === 1 ? '' : 's') + ' overlap this city:</p><ul>';
   kept.forEach((r, i) => {
     const p = r.d.properties;
-    const pct = r.share === null ? '' : (r.share >= 0.995 ? 'covers the whole city' : '≈ ' + Math.max(1, Math.round(r.share * 100)) + '% of the city');
+    const pct = r.share === null ? '' : r.share >= 0.995 ? 'covers the whole city'
+      : r.share >= 0.01 ? '≈ ' + Math.round(r.share * 100) + '% of the city'
+      : 'small area, under 1% of the city' + (r.sqmi != null ? ' (≈ ' + (r.sqmi >= 0.1 ? r.sqmi.toFixed(1) + ' sq mi' : Math.round(r.sqmi * 640) + ' acres') + ')' : '');
     html += '<li data-i="' + i + '"><b><span class="sw" style="background:' + colorOf(r.d) + '"></span>' + esc(p.DIST_NAME) + '</b><span>' + esc(pct) +
       (p.URL ? ' · <a href="' + esc(linkOf(p.URL)) + '" target="_blank" rel="noopener">website</a>' : '') + '</span></li>';
   });
-  html += '</ul><p class="note">Percentages are approximate area shares. Overlap does not tell you which district a specific address is zoned for.</p>';
+  html += '</ul><p class="note">Percentages are approximate area shares. Small areas are listed so the count is complete; pieces under about 6 acres are left out as boundary-alignment noise. Overlap does not tell you which district a specific address is zoned for.</p>';
   panel.innerHTML = html;
   document.getElementById('share').addEventListener('click', e => {
     const done = t => { e.target.textContent = t; };

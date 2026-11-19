@@ -17,7 +17,8 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 OUT = os.path.join(ROOT, 'site', 'data')
 DIST_URL = 'https://gis.mo.gov/arcgis/rest/services/DESE/Missouri_Public_Schools/MapServer/1/query?where=1%3D1&outFields=*&outSR=4326&f=geojson'
 CITY_URL = 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Places_CouSub_ConCity_SubMCD/MapServer/4/query?where=STATE%3D%2729%27&outFields=*&outSR=4326&f=geojson'
-MIN_SHARE = 0.005  # ignore boundary slivers under 0.5% of a city's area
+MIN_SQMI = 0.01  # ~6 acres: ignore boundary-alignment slivers, keep real small pieces
+SQMI_PER_DEG2 = 111.32 ** 2 / 2.58999  # after the cos(lat) x-scale below
 
 def fetch(url):
     req = urllib.request.Request(url, headers={'User-Agent': 'schools-map-refresh'})
@@ -55,9 +56,9 @@ def main():
             continue
         rows = []
         for i in tree.query(cg, predicate='intersects'):
-            share = dgeo[i].intersection(cg).area / cg.area
-            if share >= MIN_SHARE:
-                rows.append([dists[i]['properties']['DIST_CODE'], round(share, 4)])
+            a = dgeo[i].intersection(cg).area
+            if a * SQMI_PER_DEG2 >= MIN_SQMI:
+                rows.append([dists[i]['properties']['DIST_CODE'], round(a / cg.area, 5), round(a * SQMI_PER_DEG2, 2)])
         overlaps[c['properties']['GEOID']] = sorted(rows, key=lambda r: -r[1])
 
     # Color index so no two neighboring districts share a color (greedy, most-neighbors first).
