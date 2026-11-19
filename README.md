@@ -1,49 +1,31 @@
-# patientvibes-main
+# Missouri school districts & city limits
 
-Source for **[patientvibes.io](https://patientvibes.io)** — Chris Moore's portfolio for AI agent development and "vibe coding" consulting.
+Served at **[patientvibes.io](https://patientvibes.io)** and **[schools.patientvibes.io](https://schools.patientvibes.io)**.
 
-A single Astro 6 page in the "Sage Editorial" design language: Instrument Serif + Inter + JetBrains Mono on a sage-and-paper palette, no Tailwind, all tokens. Project rows are bound at build time to the public catalog at [agents.patientvibes.io/api/projects.json](https://agents.patientvibes.io/api/projects.json) — push a README to one of the `agent-*` sibling repos and it propagates here next build.
+A phone-friendly map that answers *"which school districts serve parts of this city?"* for every incorporated city in Missouri. It overlays DESE school district boundaries on Census city limits. Search or tap a city to see the overlapping districts and roughly what share of the city each one covers.
+
+Share a direct answer with a link: `https://schools.patientvibes.io/?city=Lee's Summit`
+
+## How it works
+
+- `site/` is the whole site: one `index.html` (Leaflet + Turf from unpkg, OpenStreetMap tiles) plus `site/data/`.
+- The data is a **snapshot hosted here**, because the state GIS server (`gis.mo.gov`) blocks cross-origin browser requests. The page can't query it live.
+- `tools/refresh_data.py` downloads fresh boundaries, writes simplified copies for drawing, and precomputes `overlaps.json` (city → districts with area share) from the **full-detail** geometry.
+- `.github/workflows/refresh-data.yml` reruns it quarterly and commits only when boundaries actually changed. You can also run it by hand from the Actions tab.
 
 ## Local dev
 
 ```bash
-npm install
-npm run dev      # http://localhost:4321
-npm run build    # writes dist/
-npm run preview  # serves dist/
-npm run lint     # stylelint over src/**/*.css
+pip install "shapely>=2"
+python tools/refresh_data.py   # refresh site/data/
+npm run build                  # copies site/ -> dist/
+npx serve dist                 # http://localhost:3000
 ```
 
-`npm run build` runs `prebuild` first — fetches `https://agents.patientvibes.io/api/projects.json` into `.cache/projects.json`, falls back to `__fixtures__/projects.json` if the sibling site is unreachable. Node ≥22.12.
+## Data sources & caveats
 
-## Layout
+- School districts: Missouri DESE, `gis.mo.gov/arcgis/rest/services/DESE/Missouri_Public_Schools/MapServer/1`
+- City limits: U.S. Census Bureau TIGERweb incorporated places, `.../TIGERweb/Places_CouSub_ConCity_SubMCD/MapServer/4` (`STATE='29'`). This can lag recent annexations.
+- Overlap is not attendance zoning. Families should confirm an address with the district.
 
-```
-src/
-├── layouts/BaseLayout.astro    # head, fonts preload, favicon, RSS link
-├── pages/
-│   ├── index.astro             # the homepage
-│   └── index.xml.ts            # RSS endpoint via @astrojs/rss
-├── components/                 # ProjectRow, NoteRow, BenchPanel, Terminal
-├── content/notes/              # markdown notes (Zod-validated frontmatter)
-├── styles/                     # tokens.css · base.css · components.css · fonts.css
-└── lib/load-projects.ts        # reads .cache/projects.json
-public/
-├── brand/                      # favicons
-└── fonts/                      # 7 self-hosted woff2 (latin subset)
-scripts/fetch-projects.mjs      # the prebuild fetcher
-__fixtures__/projects.json      # offline fallback for builds
-archive/                        # old gradient index + mockups, kept for reference
-```
-
-## Design tokens are the schema
-
-All colors live in [`src/styles/tokens.css`](src/styles/tokens.css) as `--pv-*` custom properties. Everywhere else uses `var(--pv-*)`. `stylelint` enforces this — `color-no-hex` is on for `src/**/*.css` except `tokens.css`. Adding a color = adding a token first.
-
-## Deploy
-
-Cloudflare Pages project `patientvibes-main`, git-connected to this repo's `main` branch. Push to `main` is the deploy trigger (when the GitHub App webhook is healthy — see [CLAUDE.md](CLAUDE.md) for the manual-trigger fallback). Build command is `npm run build`, output is `dist/`.
-
-## More
-
-See [`CLAUDE.md`](CLAUDE.md) for the full operational guide: the cross-site contract, the 1Password vault layout, the Cloudflare account context, common ops, and what to watch out for.
+The previous portfolio site (Astro) lives in git history before this change.
