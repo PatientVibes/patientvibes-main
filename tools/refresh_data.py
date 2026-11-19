@@ -60,7 +60,17 @@ def main():
                 rows.append([dists[i]['properties']['DIST_CODE'], round(share, 4)])
         overlaps[c['properties']['GEOID']] = sorted(rows, key=lambda r: -r[1])
 
-    write('districts.geojson', slim(dists, ['DIST_NAME', 'DIST_CODE', 'COUNTY', 'URL', 'DPHONE_1'], 0.0003))
+    # Color index so no two neighboring districts share a color (greedy, most-neighbors first).
+    nbrs = [set(j for j in tree.query(g, predicate='intersects') if j != i) for i, g in enumerate(dgeo)]
+    color = {}
+    for i in sorted(range(len(dgeo)), key=lambda i: -len(nbrs[i])):
+        used = {color[j] for j in nbrs[i] if j in color}
+        color[i] = next(c for c in range(99) if c not in used)
+    for i, f in enumerate(dists):
+        f['properties']['C'] = color[i]
+    print('colors used:', max(color.values()) + 1)
+
+    write('districts.geojson', slim(dists, ['DIST_NAME', 'DIST_CODE', 'COUNTY', 'URL', 'DPHONE_1', 'C'], 0.0003))
     write('cities.geojson', slim(cities, ['NAME', 'BASENAME', 'GEOID'], 0.0001))
     write('overlaps.json', overlaps)
     write('meta.json', {'updated': datetime.date.today().isoformat(), 'districts': len(dists), 'cities': len(cities)})

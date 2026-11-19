@@ -28,6 +28,12 @@
   .legend { background:#fff; padding:6px 8px; border-radius:6px; font-size:12px; box-shadow:0 1px 4px rgba(0,0,0,.3); line-height:1.5; }
   .sw { display:inline-block; width:14px; height:10px; margin-right:6px; vertical-align:middle; }
   .sharebtn { margin:4px 0 6px; padding:8px 12px; font-size:14px; border:1px solid var(--line); border-radius:8px; background:#eef2f4; color:var(--ink); cursor:pointer; }
+  .dlabel span { display:inline-block; transform:translate(-50%,-50%); white-space:nowrap; font-size:11px; font-weight:600; color:#13303d;
+    text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff; pointer-events:none; }
+  .card .cardhead { display:flex; align-items:center; font-size:14px; }
+  .card div { margin:2px 0; } .muted { color:var(--muted); font-size:12px; }
+  .cardcity { margin-top:8px; padding-top:6px; border-top:1px solid var(--line); }
+  #panel li b .sw { border:1px solid #1d4e63; }
   .note { font-size:12px; color:var(--muted); }
   @media (max-width: 700px) {
     #main { flex-direction:column; }
@@ -51,7 +57,7 @@
     <div id="map"></div>
     <aside id="panel">
       <h2>How to use</h2>
-      <p>Search for a city, or click any city or district on the map. The list shows which school districts overlap the city and roughly how much of the city each covers.</p>
+      <p>Search for a city, or tap anywhere on the map to see which district it's in. Zoom in to see district names. The list shows which school districts overlap the city and roughly how much of the city each covers.</p>
       <p class="note">District lines: Missouri DESE. Data downloaded <span id="dataDate">recently</span>. City limits: U.S. Census Bureau TIGERweb incorporated places (legal boundaries as of the Census vintage, which can lag recent annexations). Confirm any address with the district before enrolling.</p>
     </aside>
   </div>
@@ -65,8 +71,12 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors | DESE | U.S. Census Bureau'
 }).addTo(map);
 
-const palette = ['#8ecae6','#ffb703','#b7e4c7','#f4a6a6','#cdb4db','#ffd6a5','#a8dadc','#e9c46a','#bde0fe','#d4e09b'];
-const colorFor = id => palette[(parseInt(String(id).replace(/\D/g,''),10) || 0) % palette.length];
+// Six colors; tools/refresh_data.py assigns property C so neighboring districts never match.
+const palette = ['#4ea8de','#f4a261','#52b788','#e76f51','#9d79bc','#e9c46a','#8d99ae','#f28482'];
+const colorOf = f => palette[(f.properties.C ?? 0) % palette.length];
+const linkOf = u => /^https?:/i.test(u) ? u : 'http://' + u;
+const telOf = t => String(t || '').replace(/[^\d+]/g, '');
+const phoneFmt = t => { const d = telOf(t); return d.length === 10 ? '(' + d.slice(0,3) + ') ' + d.slice(3,6) + '-' + d.slice(6) : String(t); };
 const panel = document.getElementById('panel');
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const highlight = L.layerGroup();
@@ -75,7 +85,7 @@ const cityIndex = new Map();
 
 const legend = L.control({ position:'bottomleft' });
 legend.onAdd = () => { const d = L.DomUtil.create('div','legend');
-  d.innerHTML = '<div><span class="sw" style="background:#8ecae6;border:1px solid #2b6f8f"></span>School district</div>' +
+  d.innerHTML = '<div><span class="sw" style="background:linear-gradient(90deg,#4ea8de 50%,#f4a261 50%);border:1px solid #1d4e63"></span>School districts (tap one)</div>' +
                 '<div><span class="sw" style="border-top:3px solid #b3261e;height:0"></span>City limits (zoom in to see)</div>'; return d; };
 legend.addTo(map);
 
@@ -85,13 +95,22 @@ Promise.all(['data/districts.geojson','data/cities.geojson','data/overlaps.json'
   districtFC = d; cityFC = c; overlaps = o;
   d.features.forEach(f => distByCode.set(f.properties.DIST_CODE, f));
   const dn = document.getElementById('dataDate'); if (dn) dn.textContent = meta.updated;
-  L.geoJSON(d, { style: f => ({ color:'#2b6f8f', weight:1, fillColor: colorFor(f.properties.DIST_CODE), fillOpacity:0.28 }) })
-    .bindTooltip(l => l.feature.properties.DIST_NAME, { sticky:true }).addTo(map);
-  cities = L.geoJSON(c, { style: () => ({ color:'#b3261e', weight:2.5, fillOpacity:0 }) })
-    .bindTooltip(l => l.feature.properties.NAME, { sticky:true })
-    .on('click', e => { L.DomEvent.stopPropagation(e); showCity(e.layer.feature); });
-  const toggle = () => map.getZoom() >= 8 ? cities.addTo(map) : cities.remove();
+  // Layers are display-only; one map click handler figures out what was tapped (works the same on phones).
+  L.geoJSON(d, { interactive:false, style: f => ({ color:'#1d4e63', weight:1, fillColor: colorOf(f), fillOpacity:0.3 }) }).addTo(map);
+  cities = L.geoJSON(c, { interactive:false, style: () => ({ color:'#b3261e', weight:2.5, fill:false }) });
+  // District name labels at a point guaranteed inside each district.
+  const labels = L.layerGroup(d.features.map(f => {
+    const pt = turf.pointOnFeature(f).geometry.coordinates;
+    return L.marker([pt[1], pt[0]], { interactive:false, keyboard:false,
+      icon: L.divIcon({ className:'dlabel', html:'<span>' + esc(f.properties.DIST_NAME) + '</span>', iconSize:null }) });
+  }));
+  const toggle = () => {
+    const z = map.getZoom();
+    z >= 8 ? cities.addTo(map) : cities.remove();
+    z >= 10 ? labels.addTo(map) : labels.remove();
+  };
   map.on('zoomend', toggle); toggle();
+  map.on('click', e => onMapTap(e.latlng));
   highlight.addTo(map);
   const dl = document.getElementById('cities');
   c.features.slice().sort((a,b) => a.properties.NAME.localeCompare(b.properties.NAME)).forEach(f => {
@@ -117,7 +136,7 @@ function showCity(feature) {
     if (share === null || share >= 0.005) kept.push({ d, share });
   });
   if (!pre) kept.sort((a,b) => (b.share ?? 0) - (a.share ?? 0));
-  L.geoJSON(kept.map(r => r.d), { style: f => ({ color:'#2b6f8f', weight:2, fillColor:colorFor(f.properties.DIST_CODE), fillOpacity:0.35 }), interactive:false }).addTo(highlight);
+  L.geoJSON(kept.map(r => r.d), { style: f => ({ color:'#1d4e63', weight:2, fillColor:colorOf(f), fillOpacity:0.45 }), interactive:false }).addTo(highlight);
   const gj = L.geoJSON(feature, { style:{ color:'#b3261e', weight:3.5, fillOpacity:0 }, interactive:false }).addTo(highlight);
   map.fitBounds(gj.getBounds(), { padding:[30,30] });
 
@@ -129,8 +148,8 @@ function showCity(feature) {
   kept.forEach((r, i) => {
     const p = r.d.properties;
     const pct = r.share === null ? '' : (r.share >= 0.995 ? 'covers the whole city' : '≈ ' + Math.max(1, Math.round(r.share * 100)) + '% of the city');
-    html += '<li data-i="' + i + '"><b>' + esc(p.DIST_NAME) + '</b><span>' + esc(pct) +
-      (p.URL ? ' · <a href="' + esc(/^https?:/i.test(p.URL) ? p.URL : 'http://' + p.URL) + '" target="_blank" rel="noopener">website</a>' : '') + '</span></li>';
+    html += '<li data-i="' + i + '"><b><span class="sw" style="background:' + colorOf(r.d) + '"></span>' + esc(p.DIST_NAME) + '</b><span>' + esc(pct) +
+      (p.URL ? ' · <a href="' + esc(linkOf(p.URL)) + '" target="_blank" rel="noopener">website</a>' : '') + '</span></li>';
   });
   html += '</ul><p class="note">Percentages are approximate area shares. Overlap does not tell you which district a specific address is zoned for.</p>';
   panel.innerHTML = html;
@@ -144,6 +163,29 @@ function showCity(feature) {
     if (e.target.tagName === 'A') return;
     map.fitBounds(L.geoJSON(kept[+li.dataset.i].d).getBounds(), { padding:[30,30] });
   }));
+}
+
+function hit(fc, latlng) {
+  const pt = turf.point([latlng.lng, latlng.lat]);
+  return fc.features.find(f => { try { return turf.booleanPointInPolygon(pt, f); } catch (e) { return false; } });
+}
+
+function onMapTap(latlng) {
+  if (!districtFC) return;
+  const d = hit(districtFC, latlng), c = hit(cityFC, latlng);
+  if (!d && !c) return;
+  let html = '';
+  if (d) {
+    const p = d.properties;
+    html += '<div class="card"><div class="cardhead"><span class="sw" style="background:' + colorOf(d) + '"></span><b>' + esc(p.DIST_NAME) + '</b></div>' +
+      '<div class="muted">School district' + (p.COUNTY ? ' · ' + esc(p.COUNTY) + ' County' : '') + '</div>' +
+      (p.DPHONE_1 ? '<div><a href="tel:' + esc(telOf(p.DPHONE_1)) + '">' + esc(phoneFmt(p.DPHONE_1)) + '</a></div>' : '') +
+      (p.URL ? '<div><a href="' + esc(linkOf(p.URL)) + '" target="_blank" rel="noopener">District website</a></div>' : '') + '</div>';
+  }
+  if (c) html += '<div class="cardcity">In <b>' + esc(c.properties.NAME) + '</b><br><button class="sharebtn" id="seeCity">All districts in this city</button></div>';
+  const pop = L.popup({ maxWidth:260 }).setLatLng(latlng).setContent(html).openOn(map);
+  const btn = pop.getElement().querySelector('#seeCity');
+  if (btn) btn.addEventListener('click', () => { map.closePopup(); showCity(c); });
 }
 
 function findCity(name) {
