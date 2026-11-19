@@ -1,12 +1,13 @@
-"""Refresh the map data from the state (DESE) and Census (TIGERweb).
+"""Refresh the map data: DESE school districts, Census city limits, 2020 Census residents.
 
 Writes to site/data/:
-  districts.geojson  simplified school district boundaries (for drawing)
-  cities.geojson     simplified incorporated city limits (for drawing)
-  overlaps.json      city GEOID -> {"pop": residents, "d": [[DIST_CODE, land_share, sq_mi, residents], ...]}
-                     land from FULL-detail boundaries; residents from 2020 Census block counts
+  districts.geojson  simplified district boundaries for drawing; C = color index (neighbors never match)
+  cities.geojson     simplified incorporated city limits for drawing
+  overlaps.json      { cityGEOID: { "pop": residents, "d": [[DIST_CODE, land_share, sq_mi, residents], ...] } }
+                     land from FULL-detail boundaries; residents from 2020 block counts by internal point
   meta.json          download date + feature counts
 
+Fails loudly if any source is truncated or the statewide population != 6,154,913.
 Run from the repo root:  python tools/refresh_data.py   (needs shapely >= 2)
 """
 import datetime, json, math, os, urllib.request
