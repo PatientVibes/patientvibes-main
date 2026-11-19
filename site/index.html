@@ -80,7 +80,10 @@ const phoneFmt = t => { const d = telOf(t); return d.length === 10 ? '(' + d.sli
 const panel = document.getElementById('panel');
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const highlight = L.layerGroup();
-let districtFC, cityFC, cities;
+let districtFC, cityFC, cities, allDistricts, toggle = () => {};
+let focused = false; // true while one city is selected: other cities hidden, other districts faded
+const distStyle = f => ({ color:'#1d4e63', weight:1, opacity:1, fillColor: colorOf(f), fillOpacity:0.3 });
+const distFaded = () => ({ color:'#1d4e63', weight:0.5, opacity:0.25, fillOpacity:0.04 });
 const cityIndex = new Map();
 
 const legend = L.control({ position:'bottomleft' });
@@ -96,7 +99,7 @@ Promise.all(['data/districts.geojson','data/cities.geojson','data/overlaps.json'
   d.features.forEach(f => distByCode.set(f.properties.DIST_CODE, f));
   const dn = document.getElementById('dataDate'); if (dn) dn.textContent = meta.updated;
   // Layers are display-only; one map click handler figures out what was tapped (works the same on phones).
-  L.geoJSON(d, { interactive:false, style: f => ({ color:'#1d4e63', weight:1, fillColor: colorOf(f), fillOpacity:0.3 }) }).addTo(map);
+  allDistricts = L.geoJSON(d, { interactive:false, style: distStyle }).addTo(map);
   cities = L.geoJSON(c, { interactive:false, style: () => ({ color:'#b3261e', weight:2.5, fill:false }) });
   // District name labels at a point guaranteed inside each district.
   const labels = L.layerGroup(d.features.map(f => {
@@ -104,9 +107,9 @@ Promise.all(['data/districts.geojson','data/cities.geojson','data/overlaps.json'
     return L.marker([pt[1], pt[0]], { interactive:false, keyboard:false,
       icon: L.divIcon({ className:'dlabel', html:'<span>' + esc(f.properties.DIST_NAME) + '</span>', iconSize:null }) });
   }));
-  const toggle = () => {
+  toggle = () => {
     const z = map.getZoom();
-    z >= 8 ? cities.addTo(map) : cities.remove();
+    z >= 8 && !focused ? cities.addTo(map) : cities.remove();
     z >= 10 ? labels.addTo(map) : labels.remove();
   };
   map.on('zoomend', toggle); toggle();
@@ -124,6 +127,7 @@ Promise.all(['data/districts.geojson','data/cities.geojson','data/overlaps.json'
 
 function showCity(feature) {
   highlight.clearLayers();
+  focused = true; cities.remove(); allDistricts.setStyle(distFaded);
   const cityArea = turf.area(feature), cb = turf.bbox(feature);
   let kept = [];
   const pre = overlaps[feature.properties.GEOID];
@@ -143,7 +147,7 @@ function showCity(feature) {
   const url = new URL(location.href); url.search = '?city=' + encodeURIComponent(feature.properties.BASENAME || feature.properties.NAME);
   history.replaceState(null, '', url);
   let html = '<h2>' + esc(feature.properties.NAME) + '</h2>' +
-    '<button id="share" class="sharebtn">Copy link to this city</button>' +
+    '<button id="share" class="sharebtn">Copy link to this city</button> <button id="showAll" class="sharebtn">Show all cities</button>' +
     '<p>' + kept.length + ' school district' + (kept.length === 1 ? '' : 's') + ' overlap this city:</p><ul>';
   kept.forEach((r, i) => {
     const p = r.d.properties;
@@ -155,6 +159,7 @@ function showCity(feature) {
   });
   html += '</ul><p class="note">Percentages are approximate area shares. Small areas are listed so the count is complete; pieces under about 6 acres are left out as boundary-alignment noise. Overlap does not tell you which district a specific address is zoned for.</p>';
   panel.innerHTML = html;
+  document.getElementById('showAll').addEventListener('click', () => { clearFocus(); map.closePopup(); });
   document.getElementById('share').addEventListener('click', e => {
     const done = t => { e.target.textContent = t; };
     if (navigator.share && matchMedia('(max-width:700px)').matches) navigator.share({ title: feature.properties.NAME + ' school districts', url: url.href }).catch(() => {});
@@ -201,7 +206,8 @@ function findCity(name) {
 document.getElementById('go').addEventListener('click', () => { const v = document.getElementById('city').value; if (v) findCity(v); });
 document.getElementById('city').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('go').click(); });
 document.getElementById('city').addEventListener('change', e => { if (cityIndex.has(e.target.value.toLowerCase())) findCity(e.target.value); });
-document.getElementById('reset').addEventListener('click', () => { highlight.clearLayers(); document.getElementById('city').value=''; map.setView([39.0, -94.5], 9); history.replaceState(null, '', location.pathname); });
+function clearFocus() { focused = false; highlight.clearLayers(); allDistricts && allDistricts.setStyle(distStyle); toggle(); }
+document.getElementById('reset').addEventListener('click', () => { clearFocus(); map.closePopup(); document.getElementById('city').value=''; map.setView([39.0, -94.5], 9); history.replaceState(null, '', location.pathname); });
 </script>
 </body>
 </html>
