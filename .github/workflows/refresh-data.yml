@@ -1,0 +1,27 @@
+name: Refresh map data
+on:
+  schedule:
+    - cron: '0 12 1 */3 *'   # 1st of Jan/Apr/Jul/Oct, 12:00 UTC
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install "shapely>=2"
+      - run: python tools/refresh_data.py
+      - name: Commit if boundaries changed
+        run: |
+          git add site/data
+          # meta.json always changes (date); only commit if real data changed
+          if git diff --cached --quiet -- site/data/districts.geojson site/data/cities.geojson site/data/overlaps.json; then
+            echo "No boundary changes."; exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git commit -m "data: refresh DESE districts + Census city limits"
+          git push

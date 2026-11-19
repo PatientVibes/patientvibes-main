@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Missouri School Districts &amp; City Limits</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  :root { --ink:#1b2a33; --muted:#5b6b75; --line:#d6dde2; --accent:#0b6e8a; }
+  * { box-sizing: border-box; }
+  html, body { height:100%; margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color:var(--ink); }
+  #app { display:flex; flex-direction:column; height:100%; }
+  header { padding:10px 12px; border-bottom:1px solid var(--line); background:#fff; }
+  header h1 { font-size:16px; margin:0 0 6px; }
+  .search { display:flex; gap:6px; }
+  .search input { flex:1; min-width:0; padding:10px; font-size:16px; border:1px solid var(--line); border-radius:8px; }
+  .search button { padding:10px 14px; font-size:15px; border:0; border-radius:8px; background:var(--accent); color:#fff; cursor:pointer; }
+  .search button.secondary { background:#eef2f4; color:var(--ink); }
+  #main { flex:1; display:flex; min-height:0; }
+  #map { flex:1; min-width:0; }
+  #panel { width:340px; max-width:45%; overflow:auto; border-left:1px solid var(--line); padding:12px; background:#fff; font-size:14px; }
+  #panel h2 { font-size:15px; margin:0 0 6px; }
+  #panel p { margin:6px 0; color:var(--muted); }
+  #panel ul { list-style:none; padding:0; margin:8px 0; }
+  #panel li { padding:8px 0; border-top:1px solid var(--line); cursor:pointer; }
+  #panel li b { display:block; }
+  #panel li span { color:var(--muted); font-size:13px; }
+  .legend { background:#fff; padding:6px 8px; border-radius:6px; font-size:12px; box-shadow:0 1px 4px rgba(0,0,0,.3); line-height:1.5; }
+  .sw { display:inline-block; width:14px; height:10px; margin-right:6px; vertical-align:middle; }
+  .sharebtn { margin:4px 0 6px; padding:8px 12px; font-size:14px; border:1px solid var(--line); border-radius:8px; background:#eef2f4; color:var(--ink); cursor:pointer; }
+  .note { font-size:12px; color:var(--muted); }
+  @media (max-width: 700px) {
+    #main { flex-direction:column; }
+    #panel { width:100%; max-width:none; height:38%; border-left:0; border-top:1px solid var(--line); }
+    #map { height:62%; flex:none; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>Missouri school districts &amp; city limits</h1>
+    <div class="search">
+      <input id="city" list="cities" placeholder="Search a city (e.g. Lee's Summit)" autocomplete="off">
+      <datalist id="cities"></datalist>
+      <button id="go">Find</button>
+      <button id="reset" class="secondary">Reset</button>
+    </div>
+  </header>
+  <div id="main">
+    <div id="map"></div>
+    <aside id="panel">
+      <h2>How to use</h2>
+      <p>Search for a city, or click any city or district on the map. The list shows which school districts overlap the city and roughly how much of the city each covers.</p>
+      <p class="note">District lines: Missouri DESE. Data downloaded <span id="dataDate">recently</span>. City limits: U.S. Census Bureau TIGERweb incorporated places (legal boundaries as of the Census vintage, which can lag recent annexations). Confirm any address with the district before enrolling.</p>
+    </aside>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
+<script>
+const map = L.map('map', { zoomControl:true, preferCanvas:true }).setView([39.0, -94.5], 9);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors | DESE | U.S. Census Bureau'
+}).addTo(map);
+
+const palette = ['#8ecae6','#ffb703','#b7e4c7','#f4a6a6','#cdb4db','#ffd6a5','#a8dadc','#e9c46a','#bde0fe','#d4e09b'];
+const colorFor = id => palette[(parseInt(String(id).replace(/\D/g,''),10) || 0) % palette.length];
+const panel = document.getElementById('panel');
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const highlight = L.layerGroup();
+let districtFC, cityFC, cities;
+const cityIndex = new Map();
+
+const legend = L.control({ position:'bottomleft' });
+legend.onAdd = () => { const d = L.DomUtil.create('div','legend');
+  d.innerHTML = '<div><span class="sw" style="background:#8ecae6;border:1px solid #2b6f8f"></span>School district</div>' +
+                '<div><span class="sw" style="border-top:3px solid #b3261e;height:0"></span>City limits (zoom in to see)</div>'; return d; };
+legend.addTo(map);
+
+let overlaps = {}, distByCode = new Map();
+Promise.all(['data/districts.geojson','data/cities.geojson','data/overlaps.json','data/meta.json'].map(u => fetch(u).then(r => { if (!r.ok) throw new Error(u); return r.json(); })))
+.then(([d, c, o, meta]) => {
+  districtFC = d; cityFC = c; overlaps = o;
+  d.features.forEach(f => distByCode.set(f.properties.DIST_CODE, f));
+  const dn = document.getElementById('dataDate'); if (dn) dn.textContent = meta.updated;
+  L.geoJSON(d, { style: f => ({ color:'#2b6f8f', weight:1, fillColor: colorFor(f.properties.DIST_CODE), fillOpacity:0.28 }) })
+    .bindTooltip(l => l.feature.properties.DIST_NAME, { sticky:true }).addTo(map);
+  cities = L.geoJSON(c, { style: () => ({ color:'#b3261e', weight:2.5, fillOpacity:0 }) })
+    .bindTooltip(l => l.feature.properties.NAME, { sticky:true })
+    .on('click', e => { L.DomEvent.stopPropagation(e); showCity(e.layer.feature); });
+  const toggle = () => map.getZoom() >= 8 ? cities.addTo(map) : cities.remove();
+  map.on('zoomend', toggle); toggle();
+  highlight.addTo(map);
+  const dl = document.getElementById('cities');
+  c.features.slice().sort((a,b) => a.properties.NAME.localeCompare(b.properties.NAME)).forEach(f => {
+    cityIndex.set(f.properties.NAME.toLowerCase(), f);
+    cityIndex.set(String(f.properties.BASENAME).toLowerCase(), cityIndex.get(String(f.properties.BASENAME).toLowerCase()) || f);
+    const o = document.createElement('option'); o.value = f.properties.NAME; dl.appendChild(o);
+  });
+  const q = new URLSearchParams(location.search).get('city');
+  if (q) { document.getElementById('city').value = q; findCity(q); }
+}).catch(err => { console.error(err); panel.innerHTML = '<h2>Map data failed to load</h2><p>Please refresh the page.</p>'; });
+
+function showCity(feature) {
+  highlight.clearLayers();
+  const cityArea = turf.area(feature), cb = turf.bbox(feature);
+  let kept = [];
+  const pre = overlaps[feature.properties.GEOID];
+  if (pre) kept = pre.map(([code, share]) => ({ d: distByCode.get(code), share })).filter(r => r.d);
+  else districtFC.features.forEach(d => {
+    const db = turf.bbox(d);
+    if (db[0] > cb[2] || db[2] < cb[0] || db[1] > cb[3] || db[3] < cb[1]) return;
+    let share = null;
+    try { const x = turf.intersect(feature, d); if (!x) return; share = turf.area(x) / cityArea; } catch (e) {}
+    if (share === null || share >= 0.005) kept.push({ d, share });
+  });
+  if (!pre) kept.sort((a,b) => (b.share ?? 0) - (a.share ?? 0));
+  L.geoJSON(kept.map(r => r.d), { style: f => ({ color:'#2b6f8f', weight:2, fillColor:colorFor(f.properties.DIST_CODE), fillOpacity:0.35 }), interactive:false }).addTo(highlight);
+  const gj = L.geoJSON(feature, { style:{ color:'#b3261e', weight:3.5, fillOpacity:0 }, interactive:false }).addTo(highlight);
+  map.fitBounds(gj.getBounds(), { padding:[30,30] });
+
+  const url = new URL(location.href); url.search = '?city=' + encodeURIComponent(feature.properties.BASENAME || feature.properties.NAME);
+  history.replaceState(null, '', url);
+  let html = '<h2>' + esc(feature.properties.NAME) + '</h2>' +
+    '<button id="share" class="sharebtn">Copy link to this city</button>' +
+    '<p>' + kept.length + ' school district' + (kept.length === 1 ? '' : 's') + ' overlap this city:</p><ul>';
+  kept.forEach((r, i) => {
+    const p = r.d.properties;
+    const pct = r.share === null ? '' : (r.share >= 0.995 ? 'covers the whole city' : '≈ ' + Math.max(1, Math.round(r.share * 100)) + '% of the city');
+    html += '<li data-i="' + i + '"><b>' + esc(p.DIST_NAME) + '</b><span>' + esc(pct) +
+      (p.URL ? ' · <a href="' + esc(/^https?:/i.test(p.URL) ? p.URL : 'http://' + p.URL) + '" target="_blank" rel="noopener">website</a>' : '') + '</span></li>';
+  });
+  html += '</ul><p class="note">Percentages are approximate area shares. Overlap does not tell you which district a specific address is zoned for.</p>';
+  panel.innerHTML = html;
+  document.getElementById('share').addEventListener('click', e => {
+    const done = t => { e.target.textContent = t; };
+    if (navigator.share && matchMedia('(max-width:700px)').matches) navigator.share({ title: feature.properties.NAME + ' school districts', url: url.href }).catch(() => {});
+    else if (navigator.clipboard) navigator.clipboard.writeText(url.href).then(() => done('Link copied!'), () => done(url.href));
+    else done(url.href);
+  });
+  panel.querySelectorAll('li').forEach(li => li.addEventListener('click', e => {
+    if (e.target.tagName === 'A') return;
+    map.fitBounds(L.geoJSON(kept[+li.dataset.i].d).getBounds(), { padding:[30,30] });
+  }));
+}
+
+function findCity(name) {
+  if (!cityFC) return;
+  const q = name.trim().toLowerCase();
+  const f = cityIndex.get(q) || cityFC.features.find(f => f.properties.NAME.toLowerCase().startsWith(q));
+  if (!f) { panel.innerHTML = '<h2>No match</h2><p>Pick a city from the suggestions as you type.</p>'; return; }
+  showCity(f);
+}
+
+document.getElementById('go').addEventListener('click', () => { const v = document.getElementById('city').value; if (v) findCity(v); });
+document.getElementById('city').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('go').click(); });
+document.getElementById('city').addEventListener('change', e => { if (cityIndex.has(e.target.value.toLowerCase())) findCity(e.target.value); });
+document.getElementById('reset').addEventListener('click', () => { highlight.clearLayers(); document.getElementById('city').value=''; map.setView([39.0, -94.5], 9); history.replaceState(null, '', location.pathname); });
+</script>
+</body>
+</html>
