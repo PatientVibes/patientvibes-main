@@ -3,7 +3,8 @@
 Writes to site/data/:
   districts.geojson  simplified school district boundaries (for drawing)
   cities.geojson     simplified incorporated city limits (for drawing)
-  overlaps.json      city GEOID -> [[DIST_CODE, share], ...] computed from FULL-detail boundaries
+  overlaps.json      city GEOID -> {"pop": residents, "d": [[DIST_CODE, land_share, sq_mi, residents], ...]}
+                     land from FULL-detail boundaries; residents from 2020 Census block counts
   meta.json          download date + feature counts
 
 Run from the repo root:  python tools/refresh_data.py   (needs shapely >= 2)
@@ -17,6 +18,9 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 OUT = os.path.join(ROOT, 'site', 'data')
 DIST_URL = 'https://gis.mo.gov/arcgis/rest/services/DESE/Missouri_Public_Schools/MapServer/1/query?where=1%3D1&outFields=*&outSR=4326&f=geojson'
 CITY_URL = 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Places_CouSub_ConCity_SubMCD/MapServer/4/query?where=STATE%3D%2729%27&outFields=*&outSR=4326&f=geojson'
+BLOCKS_URL = ('https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Tracts_Blocks/MapServer/12/query'
+              '?where=STATE%3D%2729%27+AND+COUNTY%3D%27{}%27&outFields=POP100,INTPTLAT,INTPTLON&returnGeometry=false&f=json')
+MO_COUNTIES = [f'{n:03d}' for n in range(1, 230, 2)] + ['186', '510']  # odd FIPS + Ste. Genevieve (186) + St. Louis city (510)
 MIN_SQMI = 0.01  # ~6 acres: ignore boundary-alignment slivers, keep real small pieces
 SQMI_PER_DEG2 = 111.32 ** 2 / 2.58999  # after the cos(lat) x-scale below
 
@@ -26,6 +30,20 @@ def fetch(url):
     if d.get('exceededTransferLimit'):
         raise SystemExit('server truncated results: ' + url)
     return d['features']
+
+def fetch_blocks():
+    """2020 Census block internal points + population, county by county (each under the 100k page limit)."""
+    pts = []
+    for c in MO_COUNTIES:
+        req = urllib.request.Request(BLOCKS_URL.format(c), headers={'User-Agent': 'schools-map-refresh'})
+        d = json.load(urllib.request.urlopen(req, timeout=180))
+        if d.get('exceededTransferLimit'):
+            raise SystemExit('blocks truncated for county ' + c)
+        for f in d.get('features', []):
+            a = f['attributes']
+            if a['POP100']:
+                pts.append((float(a['INTPTLON']), float(a['INTPTLAT']), a['POP100']))
+    return pts
 
 def slim(feats, keep, tol):
     out = []
@@ -42,6 +60,11 @@ def write(name, obj):
 def main():
     os.makedirs(OUT, exist_ok=True)
     dists, cities = fetch(DIST_URL), fetch(CITY_URL)
+    blocks = fetch_blocks()
+    mo = sum(b[2] for b in blocks)
+    print('blocks with residents:', len(blocks), 'MO population:', mo)
+    if mo != 6154913:  # official 2020 Missouri total; catches a missing county
+        raise SystemExit(f'block population {mo} != 6,154,913 (2020 Census)')
 
     # Overlaps from full-detail geometry. Shares are ratios inside one city, so a
     # cos(latitude) x-scale is plenty accurate for an equal-area-ish comparison.
@@ -49,17 +72,30 @@ def main():
     proj = lambda g: transform(lambda x, y, z=None: (x * k, y), g)
     dgeo = [proj(shape(f['geometry']).buffer(0)) for f in dists]
     tree = STRtree(dgeo)
+    # Residents: each populated block goes to the city and district containing its internal point.
+    from shapely import points as mkpoints
+    cgeo = [proj(shape(c['geometry']).buffer(0)) for c in cities]
+    ctree = STRtree(cgeo)
+    bpts = mkpoints([(x * k, y) for x, y, _ in blocks])
+    res = {}  # (city idx, district idx) -> residents
+    city_pop = [0] * len(cities)
+    for bi, ci in zip(*ctree.query(bpts, predicate='within')):
+        city_pop[ci] += blocks[bi][2]
+        for di in tree.query(bpts[bi], predicate='within'):
+            res[(ci, di)] = res.get((ci, di), 0) + blocks[bi][2]
+            break
+
     overlaps = {}
-    for c in cities:
-        cg = proj(shape(c['geometry']).buffer(0))
+    for ci, c in enumerate(cities):
+        cg = cgeo[ci]
         if cg.area == 0:
             continue
         rows = []
         for i in tree.query(cg, predicate='intersects'):
             a = dgeo[i].intersection(cg).area
             if a * SQMI_PER_DEG2 >= MIN_SQMI:
-                rows.append([dists[i]['properties']['DIST_CODE'], round(a / cg.area, 5), round(a * SQMI_PER_DEG2, 2)])
-        overlaps[c['properties']['GEOID']] = sorted(rows, key=lambda r: -r[1])
+                rows.append([dists[i]['properties']['DIST_CODE'], round(a / cg.area, 5), round(a * SQMI_PER_DEG2, 2), res.get((ci, i), 0)])
+        overlaps[c['properties']['GEOID']] = {'pop': city_pop[ci], 'd': sorted(rows, key=lambda r: (-r[3], -r[1]))}
 
     # Color index so no two neighboring districts share a color (greedy, most-neighbors first).
     nbrs = [set(j for j in tree.query(g, predicate='intersects') if j != i) for i, g in enumerate(dgeo)]

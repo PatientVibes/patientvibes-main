@@ -34,6 +34,20 @@
   .card div { margin:2px 0; } .muted { color:var(--muted); font-size:12px; }
   .cardcity { margin-top:8px; padding-top:6px; border-top:1px solid var(--line); }
   #panel li b .sw { border:1px solid #1d4e63; }
+  #panel li { transition: background .12s; }
+  #panel li:hover, #panel li.sel { background:#eef6f9; }
+  #panel li.sel { box-shadow: inset 4px 0 0 #0b2733; padding-left:8px; }
+  #panel li b { display:flex; align-items:center; gap:2px; }
+  .tag { font-style:normal; font-weight:500; font-size:11px; color:var(--muted); background:#eef2f4; border-radius:4px; padding:1px 5px; margin-left:6px; }
+  .bar { display:flex; align-items:center; gap:6px; margin-top:3px; font-size:11px; color:var(--muted); }
+  .bar em { font-style:normal; width:84px; flex:none; }
+  .bar s { flex:1; height:8px; background:#eef2f4; border-radius:4px; overflow:hidden; text-decoration:none; }
+  .bar i { display:block; height:100%; min-width:2px; background:#0b6e8a; border-radius:4px; }
+  .bar.land i { background:#9fb3bd; }
+  .bar small { flex:none; font-size:11px; }
+  .sortbar { font-size:13px; color:var(--muted); margin:6px 0 2px; }
+  .sortbar button { font-size:13px; padding:4px 10px; margin-left:4px; border:1px solid var(--line); border-radius:999px; background:#fff; color:var(--ink); cursor:pointer; }
+  .sortbar button.on { background:var(--accent); border-color:var(--accent); color:#fff; }
   .note { font-size:12px; color:var(--muted); }
   @media (max-width: 700px) {
     #main { flex-direction:column; }
@@ -125,51 +139,95 @@ Promise.all(['data/districts.geojson','data/cities.geojson','data/overlaps.json'
   if (q) { document.getElementById('city').value = q; findCity(q); }
 }).catch(err => { console.error(err); panel.innerHTML = '<h2>Map data failed to load</h2><p>Please refresh the page.</p>'; });
 
+// ---- Selected city: list of overlapping districts with residents + land, linked highlight ----
+let cur = null; // { feature, rows, total, url, sortBy, sel }
+const fmtN = n => n.toLocaleString('en-US');
+const pctTxt = x => x >= 0.995 ? '100%' : x >= 0.01 ? Math.round(x * 100) + '%' : x > 0 ? '<1%' : '0%';
+const areaTxt = sqmi => sqmi >= 0.1 ? sqmi.toFixed(1) + ' sq mi' : Math.round(sqmi * 640) + ' acres';
+const FEW = 50; // residents: below this a district's slice is tagged "few residents"
+const styleNormal = f => ({ color:'#1d4e63', weight:2, opacity:1, fillColor:colorOf(f), fillOpacity:0.45 });
+const styleDim = f => ({ color:'#1d4e63', weight:1, opacity:0.5, fillColor:colorOf(f), fillOpacity:0.15 });
+const styleHot = f => ({ color:'#0b2733', weight:5, opacity:1, fillColor:colorOf(f), fillOpacity:0.6 });
+
 function showCity(feature) {
-  highlight.clearLayers();
+  highlight.clearLayers(); map.closePopup();
   focused = true; cities.remove(); allDistricts.setStyle(distFaded);
-  const cityArea = turf.area(feature), cb = turf.bbox(feature);
-  let kept = [];
-  const pre = overlaps[feature.properties.GEOID];
-  if (pre) kept = pre.map(([code, share, sqmi]) => ({ d: distByCode.get(code), share, sqmi })).filter(r => r.d);
-  else districtFC.features.forEach(d => {
-    const db = turf.bbox(d);
-    if (db[0] > cb[2] || db[2] < cb[0] || db[1] > cb[3] || db[3] < cb[1]) return;
-    let share = null;
-    try { const x = turf.intersect(feature, d); if (!x) return; share = turf.area(x) / cityArea; } catch (e) {}
-    if (share === null || share >= 0.005) kept.push({ d, share });
+  const pre = overlaps[feature.properties.GEOID] || { pop:0, d:[] };
+  const rows = pre.d.map(([code, share, sqmi, pop]) => ({ d: distByCode.get(code), share, sqmi, pop })).filter(r => r.d);
+  rows.forEach(r => {
+    r.layer = L.geoJSON(r.d, { style: styleNormal, interactive:false }).addTo(highlight);
   });
-  if (!pre) kept.sort((a,b) => (b.share ?? 0) - (a.share ?? 0));
-  L.geoJSON(kept.map(r => r.d), { style: f => ({ color:'#1d4e63', weight:2, fillColor:colorOf(f), fillOpacity:0.45 }), interactive:false }).addTo(highlight);
   const gj = L.geoJSON(feature, { style:{ color:'#b3261e', weight:3.5, fillOpacity:0 }, interactive:false }).addTo(highlight);
   map.fitBounds(gj.getBounds(), { padding:[30,30] });
-
   const url = new URL(location.href); url.search = '?city=' + encodeURIComponent(feature.properties.BASENAME || feature.properties.NAME);
   history.replaceState(null, '', url);
+  cur = { feature, rows, total: pre.pop, url, sortBy: 'pop', sel: null };
+  renderList();
+}
+
+function renderList() {
+  const { feature, rows, total, sortBy } = cur;
+  const sorted = rows.slice().sort((a, b) => {
+    const fa = a.pop < FEW, fb = b.pop < FEW;
+    if (sortBy === 'pop' && fa !== fb) return fa - fb;      // few-resident slices sink to the bottom
+    return sortBy === 'pop' ? (b.pop - a.pop) || (b.share - a.share) : b.share - a.share;
+  });
   let html = '<h2>' + esc(feature.properties.NAME) + '</h2>' +
     '<button id="share" class="sharebtn">Copy link to this city</button> <button id="showAll" class="sharebtn">Show all cities</button>' +
-    '<p>' + kept.length + ' school district' + (kept.length === 1 ? '' : 's') + ' overlap this city:</p><ul>';
-  kept.forEach((r, i) => {
-    const p = r.d.properties;
-    const pct = r.share === null ? '' : r.share >= 0.995 ? 'covers the whole city'
-      : r.share >= 0.01 ? '≈ ' + Math.round(r.share * 100) + '% of the city'
-      : 'small area, under 1% of the city' + (r.sqmi != null ? ' (≈ ' + (r.sqmi >= 0.1 ? r.sqmi.toFixed(1) + ' sq mi' : Math.round(r.sqmi * 640) + ' acres') + ')' : '');
-    html += '<li data-i="' + i + '"><b><span class="sw" style="background:' + colorOf(r.d) + '"></span>' + esc(p.DIST_NAME) + '</b><span>' + esc(pct) +
-      (p.URL ? ' · <a href="' + esc(linkOf(p.URL)) + '" target="_blank" rel="noopener">website</a>' : '') + '</span></li>';
+    '<p>' + fmtN(total) + ' residents (2020) · ' + rows.length + ' school district' + (rows.length === 1 ? '' : 's') + ' overlap this city.</p>' +
+    '<div class="sortbar">Sort: <button data-s="pop" class="' + (sortBy === 'pop' ? 'on' : '') + '">residents</button><button data-s="land" class="' + (sortBy === 'land' ? 'on' : '') + '">land</button></div><ul>';
+  sorted.forEach(r => {
+    const p = r.d.properties, i = rows.indexOf(r);
+    const rs = total ? r.pop / total : 0;
+    const few = r.pop < FEW;
+    html += '<li data-i="' + i + '" class="' + (cur.sel === i ? 'sel' : '') + '">' +
+      '<b><span class="sw" style="background:' + colorOf(r.d) + '"></span>' + esc(p.DIST_NAME) +
+      (few ? ' <em class="tag">' + (r.pop ? 'few residents' : 'no residents') + '</em>' : '') + '</b>' +
+      '<span>' + fmtN(r.pop) + ' residents · ' + pctTxt(rs) + ' of ' + esc(feature.properties.BASENAME || 'city') +
+      (p.URL ? ' · <a href="' + esc(linkOf(p.URL)) + '" target="_blank" rel="noopener">website</a>' : '') + '</span>' +
+      '<div class="bar"><em>residents ' + pctTxt(rs) + '</em><s><i style="width:' + (rs * 100).toFixed(1) + '%"></i></s></div>' +
+      '<div class="bar land"><em>land ' + pctTxt(r.share) + '</em><s><i style="width:' + (r.share * 100).toFixed(1) + '%"></i></s>' + (r.share < 0.01 ? '<small>' + areaTxt(r.sqmi) + '</small>' : '') + '</div>' +
+      '</li>';
   });
-  html += '</ul><p class="note">Percentages are approximate area shares. Small areas are listed so the count is complete; pieces under about 6 acres are left out as boundary-alignment noise. Overlap does not tell you which district a specific address is zoned for.</p>';
+  html += '</ul><p class="note">Residents: 2020 Census block counts, all ages (not just students), on current district lines. Land: share of the city\'s area. ' +
+    'Pieces under about 6 acres are left out as boundary noise. Overlap does not tell you which district a specific address is zoned for.</p>';
   panel.innerHTML = html;
+
   document.getElementById('showAll').addEventListener('click', () => { clearFocus(); map.closePopup(); });
   document.getElementById('share').addEventListener('click', e => {
     const done = t => { e.target.textContent = t; };
-    if (navigator.share && matchMedia('(max-width:700px)').matches) navigator.share({ title: feature.properties.NAME + ' school districts', url: url.href }).catch(() => {});
-    else if (navigator.clipboard) navigator.clipboard.writeText(url.href).then(() => done('Link copied!'), () => done(url.href));
-    else done(url.href);
+    if (navigator.share && matchMedia('(max-width:700px)').matches) navigator.share({ title: feature.properties.NAME + ' school districts', url: cur.url.href }).catch(() => {});
+    else if (navigator.clipboard) navigator.clipboard.writeText(cur.url.href).then(() => done('Link copied!'), () => done(cur.url.href));
+    else done(cur.url.href);
   });
-  panel.querySelectorAll('li').forEach(li => li.addEventListener('click', e => {
-    if (e.target.tagName === 'A') return;
-    map.fitBounds(L.geoJSON(kept[+li.dataset.i].d).getBounds(), { padding:[30,30] });
-  }));
+  panel.querySelectorAll('.sortbar button').forEach(b => b.addEventListener('click', () => { cur.sortBy = b.dataset.s; renderList(); }));
+  panel.querySelectorAll('li').forEach(li => {
+    const i = +li.dataset.i;
+    li.addEventListener('mouseenter', () => { if (cur.sel === null) paint(i); });
+    li.addEventListener('mouseleave', () => { if (cur.sel === null) paint(null); });
+    li.addEventListener('click', e => {
+      if (e.target.tagName === 'A') return;
+      selectRow(cur.sel === i ? null : i, true);
+    });
+  });
+  paint(cur.sel);
+}
+
+// Style the city's district layers: one hot, the rest dimmed; or all normal when i is null.
+function paint(i) {
+  if (!cur) return;
+  cur.rows.forEach((r, j) => r.layer.setStyle(i === null ? styleNormal : j === i ? styleHot : styleDim));
+  if (i !== null) cur.rows[i].layer.bringToFront();
+}
+
+function selectRow(i, zoom) {
+  cur.sel = i;
+  panel.querySelectorAll('li').forEach(li => li.classList.toggle('sel', +li.dataset.i === i));
+  paint(i);
+  if (i === null) return;
+  if (zoom) map.fitBounds(cur.rows[i].layer.getBounds(), { padding:[30,30], maxZoom: 14 });
+  const li = panel.querySelector('li[data-i="' + i + '"]');
+  if (li) li.scrollIntoView({ block:'nearest', behavior:'smooth' });
 }
 
 function hit(fc, latlng) {
@@ -181,6 +239,9 @@ function onMapTap(latlng) {
   if (!districtFC) return;
   const d = hit(districtFC, latlng), c = hit(cityFC, latlng);
   if (!d && !c) return;
+  // If this district is in the selected city's list, highlight its row too.
+  const inCur = cur && focused && d ? cur.rows.findIndex(r => r.d === d) : -1;
+  if (inCur >= 0) selectRow(inCur, false);
   let html = '';
   if (d) {
     const p = d.properties;
@@ -189,7 +250,12 @@ function onMapTap(latlng) {
       (p.DPHONE_1 ? '<div><a href="tel:' + esc(telOf(p.DPHONE_1)) + '">' + esc(phoneFmt(p.DPHONE_1)) + '</a></div>' : '') +
       (p.URL ? '<div><a href="' + esc(linkOf(p.URL)) + '" target="_blank" rel="noopener">District website</a></div>' : '') + '</div>';
   }
-  if (c) html += '<div class="cardcity">In <b>' + esc(c.properties.NAME) + '</b><br><button class="sharebtn" id="seeCity">All districts in this city</button></div>';
+  if (c) {
+    const o = overlaps[c.properties.GEOID], row = d && o ? o.d.find(r => r[0] === d.properties.DIST_CODE) : null;
+    html += '<div class="cardcity">In <b>' + esc(c.properties.NAME) + '</b>' +
+      (row && o.pop ? '<div class="muted">' + fmtN(row[3]) + ' of its ' + fmtN(o.pop) + ' residents (' + pctTxt(row[3] / o.pop) + ') live in this district</div>' : '') +
+      (inCur >= 0 ? '' : '<button class="sharebtn" id="seeCity">All districts in this city</button>') + '</div>';
+  }
   const pop = L.popup({ maxWidth:260 }).setLatLng(latlng).setContent(html).openOn(map);
   const btn = pop.getElement().querySelector('#seeCity');
   if (btn) btn.addEventListener('click', () => { map.closePopup(); showCity(c); });
@@ -206,7 +272,7 @@ function findCity(name) {
 document.getElementById('go').addEventListener('click', () => { const v = document.getElementById('city').value; if (v) findCity(v); });
 document.getElementById('city').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('go').click(); });
 document.getElementById('city').addEventListener('change', e => { if (cityIndex.has(e.target.value.toLowerCase())) findCity(e.target.value); });
-function clearFocus() { focused = false; highlight.clearLayers(); allDistricts && allDistricts.setStyle(distStyle); toggle(); }
+function clearFocus() { focused = false; cur = null; highlight.clearLayers(); allDistricts && allDistricts.setStyle(distStyle); toggle(); }
 document.getElementById('reset').addEventListener('click', () => { clearFocus(); map.closePopup(); document.getElementById('city').value=''; map.setView([39.0, -94.5], 9); history.replaceState(null, '', location.pathname); });
 </script>
 </body>
