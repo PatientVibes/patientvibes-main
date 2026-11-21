@@ -17,7 +17,7 @@ scripts/build.mjs          site/ -> dist/, stamps data URLs with ?v=<commit>
 
 - Cloudflare Pages project **`patientvibes-main`**, git-connected through the "Cloudflare Workers and Pages" GitHub App. Every push to `main` deploys (~1 min). Build `npm run build`, output `dist`. No npm dependencies.
 - Custom domains on the project: `patientvibes.io` (apex CNAME → `patientvibes-main.pages.dev`) and `schools.patientvibes.io` (proxied CNAME → same, added 2026-11-19).
-- Other subdomains in the `patientvibes.io` zone (agents, property, plaza, nextcloud, paperless, stirling, pokemon) belong to other projects. Don't touch them.
+- The zone holds **only** the apex and `schools.` (both -> `patientvibes-main`). Everything else was removed on 2026-11-21: the homelab's Nextcloud/Paperless/Stirling moved to `chrispaulmoore.com`, and `agents.`, `plaza.`, `pokemon.` were deleted (their Pages projects still exist on `*.pages.dev`). Any new subdomain on this zone should belong to this site.
 - Verify a deploy: `curl -s https://schools.patientvibes.io/ | grep -o "overlaps.json?v=[a-z0-9]*"` shows the new commit SHA prefix.
 
 ## Credentials (1Password, vault "Service Account", id `jkpi6kbttqrirancazuclw2tna`)
@@ -41,3 +41,4 @@ The `op` CLI runs as a service account, so pass `--vault`:
 ## History
 
 - 2026-11-19: replaced the old Astro portfolio with this map (PRs #2–#7). The portfolio is backed up elsewhere and is not needed here.
+- 2026-11-21: cleared every other subdomain out of the `patientvibes.io` zone (see Deploy).
